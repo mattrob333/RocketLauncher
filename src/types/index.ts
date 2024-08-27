@@ -1,14 +1,16 @@
 // src/types/index.ts
 
-// src/types/index.ts
-
 export interface Workflow {
   id: string;
   title: string;
   description: string;
   chatflowId: string;
-  expectedInput: string;
+  expectedInput: string[]; // Array of strings
   exampleInput: string;
+  category: string;
+  keyObjectives: string[]; // Array of strings
+  steps: string[]; // Array of strings
+  tags: string[]; // Array of strings
 }
 
 export interface Webhook {

@@ -18,14 +18,25 @@ function App() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const workflowSnapshot = await getDocs(collection(db, "workflows"));
-      setWorkflows(workflowSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workflow)));
-
-      const webhookSnapshot = await getDocs(collection(db, "webhooks"));
-      setWebhooks(webhookSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Webhook)));
+      try {
+        // Fetch workflows
+        const workflowSnapshot = await getDocs(collection(db, "workflows"));
+        const workflowsData = workflowSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workflow));
+        setWorkflows(workflowsData);
+  
+        // Fetch webhooks
+        const webhookSnapshot = await getDocs(collection(db, "webhooks"));
+        const webhooksData = webhookSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Webhook));
+        setWebhooks(webhooksData);
+        
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
     };
+  
     fetchData();
   }, []);
+  
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>

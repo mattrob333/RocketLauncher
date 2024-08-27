@@ -6,9 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Workflow, Webhook } from '@/types';
-import { CornerDownLeft, Mic, Paperclip, Copy, Trash } from "lucide-react";
+import { CornerDownLeft, Mic, Paperclip, Copy, Trash, Loader, Check } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
+import '@/styles/markdown.css'; // Import the CSS file
 
 const API_BASE_URL = 'https://flowise-jc8z.onrender.com/api/v1/prediction/';
 
@@ -29,6 +29,8 @@ interface Message {
 export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, webhooks }: ChatContainerProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,6 +53,7 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
       const userMessage = { content: input, timestamp: new Date(), sender: 'user' };
       await addDoc(collection(db, `chats/${selectedFlowId}/messages`), userMessage);
       setInput('');
+      setLoading(true);
 
       try {
         const response = await fetch(`${API_BASE_URL}${selectedFlowId}`, {
@@ -75,13 +78,17 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
           timestamp: new Date(),
           sender: 'bot'
         });
+      } finally {
+        setLoading(false);
       }
     }
   };
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, messageId: string) => {
     navigator.clipboard.writeText(text).then(() => {
       console.log('Copied to clipboard');
+      setCopiedMessageId(messageId);
+      setTimeout(() => setCopiedMessageId(null), 2000); // Reset after 2 seconds
     }).catch(err => {
       console.error('Failed to copy: ', err);
     });
@@ -119,7 +126,7 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
       {/* Workflow selector and clear chat button */}
       <div className="p-4 flex justify-between items-center">
         <Select onValueChange={setSelectedFlowId} value={selectedFlowId}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-[800px]">
             <SelectValue placeholder="Select a workflow" />
           </SelectTrigger>
           <SelectContent>
@@ -138,25 +145,32 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
 
       {/* Scrollable messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-2">
-        {messages.map((msg) => (
-          <Card key={msg.id} className={`max-w-[80%] ${msg.sender === 'user' ? 'ml-auto bg-primary text-primary-foreground' : 'mr-auto bg-secondary text-secondary-foreground'}`}>
-            <CardContent className="p-3 flex justify-between items-start">
-              <ReactMarkdown rehypePlugins={[rehypeRaw]} className="prose dark:prose-invert max-w-none">
-                {msg.content}
-              </ReactMarkdown>
-              {msg.sender === 'bot' && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => copyToClipboard(msg.content)}
-                  className="ml-2 flex-shrink-0"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+        {messages.map((msg, index) => (
+          <div key={msg.id} className={`flex flex-col ${index > 0 && messages[index - 1].sender !== msg.sender ? 'mt-4' : ''}`}>
+            <Card className={`max-w-[80%] ${msg.sender === 'user' ? 'ml-auto bg-primary text-primary-foreground' : 'mr-auto bg-secondary text-secondary-foreground'}`}>
+              <CardContent className="p-3 flex justify-between items-start">
+                <ReactMarkdown className="markdown-content">
+                  {msg.content}
+                </ReactMarkdown>
+                {msg.sender === 'bot' && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => copyToClipboard(msg.content, msg.id)}
+                    className="ml-2 flex-shrink-0"
+                  >
+                    {copiedMessageId === msg.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         ))}
+        {loading && (
+          <div className="flex justify-center items-center my-4">
+            <Loader className="animate-spin h-6 w-6 text-primary" />
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
