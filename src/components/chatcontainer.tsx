@@ -144,34 +144,36 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
       </div>
 
       {/* Scrollable messages area */}
-      <div className="flex-1 overflow-y-auto px-4 py-2">
-        {messages.map((msg, index) => (
-          <div key={msg.id} className={`flex flex-col ${index > 0 && messages[index - 1].sender !== msg.sender ? 'mt-4' : ''}`}>
-            <Card className={`max-w-[80%] ${msg.sender === 'user' ? 'ml-auto bg-primary text-primary-foreground' : 'mr-auto bg-secondary text-secondary-foreground'}`}>
-              <CardContent className="p-3 flex justify-between items-start">
-                <ReactMarkdown className="markdown-content">
-                  {msg.content}
-                </ReactMarkdown>
-                {msg.sender === 'bot' && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => copyToClipboard(msg.content, msg.id)}
-                    className="ml-2 flex-shrink-0"
-                  >
-                    {copiedMessageId === msg.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        ))}
-        {loading && (
-          <div className="flex justify-center items-center my-4">
-            <Loader className="animate-spin h-6 w-6 text-primary" />
-          </div>
-        )}
-        <div ref={messagesEndRef} />
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex flex-col space-y-4 px-4 py-2">
+          {messages.map((msg, index) => (
+            <div key={msg.id} className={`flex flex-col ${index > 0 && messages[index - 1].sender !== msg.sender ? 'mt-4' : ''}`}>
+              <div className={`rounded-lg border shadow-sm max-w-[80%] ${msg.sender === 'user' ? 'ml-auto bg-blue-600 text-white' : 'mr-auto bg-gray-700 text-gray-200'}`}>
+                <div className="p-3 flex justify-between items-start">
+                  <div className="markdown-content">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                  {msg.sender === 'bot' && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => copyToClipboard(msg.content, msg.id)}
+                      className="ml-2 flex-shrink-0 text-gray-300 hover:text-white"
+                    >
+                      {copiedMessageId === msg.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="flex justify-center items-center my-4">
+              <Loader className="animate-spin h-6 w-6 text-primary" />
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* Webhook buttons */}
