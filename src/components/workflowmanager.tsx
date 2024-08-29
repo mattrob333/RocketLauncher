@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Check, ChevronDown, Pencil, Trash2 } from "lucide-react";
-import { collection, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { Check, ChevronDown, Pencil, Trash2, X } from "lucide-react";
+import { collection, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from '@/firebase.js';
 import { Workflow } from '@/types';
 
@@ -29,6 +29,9 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({ workflows, setWorkflo
     tags: []
   });
 
+  const [editingWorkflow, setEditingWorkflow] = useState<string | null>(null);
+  const [editedWorkflow, setEditedWorkflow] = useState<Workflow | null>(null);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, field: keyof Omit<Workflow, 'id'>) => {
     const { value } = e.target;
     setNewWorkflow(prev => ({
@@ -37,6 +40,23 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({ workflows, setWorkflo
         ? value.split(',').map(item => item.trim())
         : value
     }));
+  };
+
+  const handleEdit = (workflow: Workflow) => {
+    setEditingWorkflow(workflow.id);
+    setEditedWorkflow(workflow);
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, field: keyof Workflow) => {
+    if (editedWorkflow) {
+      const { value } = e.target;
+      setEditedWorkflow(prev => ({
+        ...prev!,
+        [field]: field === 'expectedInput' || field === 'keyObjectives' || field === 'steps' || field === 'tags'
+          ? value.split(',').map(item => item.trim())
+          : value
+      }));
+    }
   };
 
   const addWorkflow = async () => {
@@ -75,6 +95,27 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({ workflows, setWorkflo
     } catch (e) {
       console.error("Error deleting document:", e);
     }
+  };
+
+  const saveEditedWorkflow = async () => {
+    if (editedWorkflow) {
+      try {
+        const { id, ...workflowData } = editedWorkflow;
+        await updateDoc(doc(db, "workflows", id), workflowData);
+        setWorkflows(prevWorkflows => 
+          prevWorkflows.map(w => w.id === id ? editedWorkflow : w)
+        );
+        setEditingWorkflow(null);
+        setEditedWorkflow(null);
+      } catch (e) {
+        console.error("Error updating document:", e);
+      }
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingWorkflow(null);
+    setEditedWorkflow(null);
   };
 
   return (
@@ -131,51 +172,109 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({ workflows, setWorkflo
           {workflows.map((workflow) => (
             <Card key={workflow.id} className="bg-card text-card-foreground">
               <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-lg font-semibold">{workflow.title}</h3>
-                  <div className="flex space-x-2">
-                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-card-foreground">
-                      <Pencil size={16} />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground" onClick={() => deleteWorkflow(workflow.id)}>
-                      <Trash2 size={16} />
-                    </Button>
+                {editingWorkflow === workflow.id ? (
+                  // Edit mode
+                  <div>
+                    <Input
+                      value={editedWorkflow?.title}
+                      onChange={(e) => handleEditInputChange(e, 'title')}
+                      className="mb-2"
+                    />
+                    <Input
+                      value={editedWorkflow?.category}
+                      onChange={(e) => handleEditInputChange(e, 'category')}
+                      className="mb-2"
+                    />
+                    <Textarea
+                      value={editedWorkflow?.keyObjectives.join(', ')}
+                      onChange={(e) => handleEditInputChange(e, 'keyObjectives')}
+                      className="mb-2"
+                    />
+                    <Textarea
+                      value={editedWorkflow?.description}
+                      onChange={(e) => handleEditInputChange(e, 'description')}
+                      className="mb-2"
+                    />
+                    <Input
+                      value={editedWorkflow?.chatflowId}
+                      onChange={(e) => handleEditInputChange(e, 'chatflowId')}
+                      className="mb-2"
+                    />
+                    <Input
+                      value={editedWorkflow?.expectedInput.join(', ')}
+                      onChange={(e) => handleEditInputChange(e, 'expectedInput')}
+                      className="mb-2"
+                    />
+                    <Input
+                      value={editedWorkflow?.exampleInput}
+                      onChange={(e) => handleEditInputChange(e, 'exampleInput')}
+                      className="mb-2"
+                    />
+                    <Textarea
+                      value={editedWorkflow?.steps.join(', ')}
+                      onChange={(e) => handleEditInputChange(e, 'steps')}
+                      className="mb-2"
+                    />
+                    <Input
+                      value={editedWorkflow?.tags.join(', ')}
+                      onChange={(e) => handleEditInputChange(e, 'tags')}
+                      className="mb-2"
+                    />
+                    <div className="flex justify-end space-x-2 mt-2">
+                      <Button onClick={saveEditedWorkflow} className="bg-primary text-primary-foreground">Save</Button>
+                      <Button onClick={cancelEdit} variant="outline">Cancel</Button>
+                    </div>
                   </div>
-                </div>
-                <p className="text-sm text-muted-foreground mb-2">{workflow.category}</p>
-                <div className="mb-4">
-                  <h4 className="text-sm font-semibold mb-1">Key Objectives:</h4>
-                  <ul className="list-none pl-0">
-                    {Array.isArray(workflow.keyObjectives) && workflow.keyObjectives.slice(0, 3).map((objective, index) => (
-                      <li key={index} className="flex items-center mb-1">
-                        <Check size={14} className="mr-2 text-green-500" />
-                        <span className="text-sm">{objective}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <details className="text-sm">
-                  <summary className="cursor-pointer flex items-center justify-between text-sm text-muted-foreground hover:text-foreground">
-                    View Workflow Details
-                    <ChevronDown className="h-4 w-4" />
-                  </summary>
-                  <div className="mt-2">
-                    <p className="mb-2">{workflow.description}</p>
-                    <p><strong>Chatflow ID:</strong> {workflow.chatflowId}</p>
-                    <p><strong>Expected Input:</strong> {Array.isArray(workflow.expectedInput) ? workflow.expectedInput.join(', ') : workflow.expectedInput}</p>
-                    <p><strong>Example Input:</strong> {workflow.exampleInput}</p>
-                    <p><strong>Steps:</strong></p>
-                    <ol className="list-decimal pl-5 mb-2">
-                      {Array.isArray(workflow.steps) && workflow.steps.map((step, index) => (
-                        <li key={index}>{step}</li>
-                      ))}
-                    </ol>
-                    <p><strong>Tags:</strong> {Array.isArray(workflow.tags) ? workflow.tags.join(', ') : workflow.tags}</p>
-                  </div>
-                </details>
-                <Button className="w-full mt-4 bg-accent text-accent-foreground hover:bg-accent/90">
-                  Purchase Workflow
-                </Button>
+                ) : (
+                  // View mode
+                  <>
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="text-lg font-semibold">{workflow.title}</h3>
+                      <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-card-foreground" onClick={() => handleEdit(workflow)}>
+                          <Pencil size={16} />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground" onClick={() => deleteWorkflow(workflow.id)}>
+                          <Trash2 size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">{workflow.category}</p>
+                    <div className="mb-4">
+                      <h4 className="text-sm font-semibold mb-1">Key Objectives:</h4>
+                      <ul className="list-none pl-0">
+                        {Array.isArray(workflow.keyObjectives) && workflow.keyObjectives.slice(0, 3).map((objective, index) => (
+                          <li key={index} className="flex items-center mb-1">
+                            <Check size={14} className="mr-2 text-orange-500" />
+                            <span className="text-sm">{objective}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <details className="text-sm">
+                      <summary className="cursor-pointer flex items-center justify-between text-sm text-muted-foreground hover:text-foreground">
+                        View Workflow Details
+                        <ChevronDown className="h-4 w-4" />
+                      </summary>
+                      <div className="mt-2">
+                        <p className="mb-2">{workflow.description}</p>
+                        <p><strong>Chatflow ID:</strong> {workflow.chatflowId}</p>
+                        <p><strong>Expected Input:</strong> {Array.isArray(workflow.expectedInput) ? workflow.expectedInput.join(', ') : workflow.expectedInput}</p>
+                        <p><strong>Example Input:</strong> {workflow.exampleInput}</p>
+                        <p><strong>Steps:</strong></p>
+                        <ol className="list-decimal pl-5 mb-2">
+                          {Array.isArray(workflow.steps) && workflow.steps.map((step, index) => (
+                            <li key={index}>{step}</li>
+                          ))}
+                        </ol>
+                        <p><strong>Tags:</strong> {Array.isArray(workflow.tags) ? workflow.tags.join(', ') : workflow.tags}</p>
+                      </div>
+                    </details>
+                    <Button className="w-full mt-4 bg-accent text-accent-foreground hover:bg-accent/90">
+                      Purchase Workflow
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
           ))}

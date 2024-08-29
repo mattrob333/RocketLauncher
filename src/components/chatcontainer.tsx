@@ -124,24 +124,24 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
   };
 
   return (
-    <div className="flex flex-col h-full bg-background text-foreground">
+    <div className="flex flex-col h-full bg-black text-gray-300">
       {/* Workflow selector and clear chat button */}
-      <div className="p-4 flex justify-between items-center">
+      <div className="p-4 flex justify-between items-center bg-black border-b border-gray-800">
         <Select onValueChange={setSelectedFlowId} value={selectedFlowId || undefined}>
-          <SelectTrigger className="w-[800px]">
+          <SelectTrigger className="w-[800px] bg-gray-800 text-gray-300 border-gray-700">
             <SelectValue placeholder="Select a workflow" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-gray-800 text-gray-300 border-gray-700">
             {workflows.map((workflow) => (
               workflow.chatflowId ? (
-                <SelectItem key={workflow.id} value={workflow.chatflowId}>
+                <SelectItem key={workflow.id} value={workflow.chatflowId} className="hover:bg-gradient-to-r hover:from-red-500 hover:to-orange-500 hover:text-white">
                   {workflow.title}
                 </SelectItem>
               ) : null
             ))}
           </SelectContent>
         </Select>
-        <Button onClick={clearChat} variant="destructive" size="sm">
+        <Button onClick={clearChat} variant="destructive" size="sm" className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600">
           <Trash className="h-4 w-4 mr-2" />
           Clear Chat
         </Button>
@@ -152,7 +152,7 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
         <div className="flex flex-col space-y-4 px-4 py-2">
           {messages.map((msg, index) => (
             <div key={msg.id} className={`flex flex-col ${index > 0 && messages[index - 1].sender !== msg.sender ? 'mt-4' : ''}`}>
-              <div className={`rounded-lg border shadow-sm max-w-[80%] ${msg.sender === 'user' ? 'ml-auto bg-secondary text-secondary-foreground' : 'mr-auto bg-muted text-muted-foreground'}`}>
+              <div className={`rounded-lg border shadow-sm max-w-[80%] ${msg.sender === 'user' ? 'ml-auto bg-gradient-to-r from-red-500 to-orange-500 text-white' : 'mr-auto bg-muted text-muted-foreground'}`}>
                 <div className="p-3 flex justify-between items-start">
                   <div className="markdown-content">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
@@ -162,9 +162,9 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
                       variant="ghost" 
                       size="icon" 
                       onClick={() => copyToClipboard(msg.content, msg.id)}
-                      className="ml-2 flex-shrink-0 text-muted-foreground hover:text-primary"
+                      className="ml-2 flex-shrink-0 text-muted-foreground hover:text-orange-400"
                     >
-                      {copiedMessageId === msg.id ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                      {copiedMessageId === msg.id ? <Check className="h-4 w-4 text-orange-400" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   )}
                 </div>
@@ -173,7 +173,7 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
           ))}
           {loading && (
             <div className="flex justify-center items-center my-4">
-              <Loader className="animate-spin h-6 w-6 text-primary" />
+              <Loader className="animate-spin h-6 w-6 text-orange-400" />
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -184,7 +184,7 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
       <div className="p-4 border-t border-border">
         <div className="flex flex-wrap gap-2">
           {webhooks.map((webhook) => (
-            <Button key={webhook.id} onClick={() => triggerWebhook(webhook)} size="sm">
+            <Button key={webhook.id} onClick={() => triggerWebhook(webhook)} size="sm" className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white">
               {webhook.label}
             </Button>
           ))}
@@ -202,13 +202,13 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
             rows={3}
           />
           <div className="absolute bottom-2 right-2 flex space-x-2">
-            <Button type="button" variant="ghost" size="icon">
+            <Button type="button" variant="ghost" size="icon" className="text-orange-400 hover:text-red-500">
               <Paperclip className="h-4 w-4" />
             </Button>
-            <Button type="button" variant="ghost" size="icon">
+            <Button type="button" variant="ghost" size="icon" className="text-orange-400 hover:text-red-500">
               <Mic className="h-4 w-4" />
             </Button>
-            <Button type="submit" variant="ghost" size="icon">
+            <Button type="submit" variant="ghost" size="icon" className="text-orange-400 hover:text-red-500">
               <CornerDownLeft className="h-4 w-4" />
             </Button>
           </div>
