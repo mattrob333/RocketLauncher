@@ -27,6 +27,8 @@ interface Message {
 }
 
 export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, webhooks }: ChatContainerProps) {
+  console.log("ChatContainer rendering with workflows:", workflows);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -125,15 +127,17 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
     <div className="flex flex-col h-full bg-background text-foreground">
       {/* Workflow selector and clear chat button */}
       <div className="p-4 flex justify-between items-center">
-        <Select onValueChange={setSelectedFlowId} value={selectedFlowId}>
+        <Select onValueChange={setSelectedFlowId} value={selectedFlowId || undefined}>
           <SelectTrigger className="w-[800px]">
             <SelectValue placeholder="Select a workflow" />
           </SelectTrigger>
           <SelectContent>
             {workflows.map((workflow) => (
-              <SelectItem key={workflow.chatflowId} value={workflow.chatflowId}>
-                {workflow.title}
-              </SelectItem>
+              workflow.chatflowId ? (
+                <SelectItem key={workflow.id} value={workflow.chatflowId}>
+                  {workflow.title}
+                </SelectItem>
+              ) : null
             ))}
           </SelectContent>
         </Select>
@@ -148,7 +152,7 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
         <div className="flex flex-col space-y-4 px-4 py-2">
           {messages.map((msg, index) => (
             <div key={msg.id} className={`flex flex-col ${index > 0 && messages[index - 1].sender !== msg.sender ? 'mt-4' : ''}`}>
-              <div className={`rounded-lg border shadow-sm max-w-[80%] ${msg.sender === 'user' ? 'ml-auto bg-blue-600 text-white' : 'mr-auto bg-gray-700 text-gray-200'}`}>
+              <div className={`rounded-lg border shadow-sm max-w-[80%] ${msg.sender === 'user' ? 'ml-auto bg-secondary text-secondary-foreground' : 'mr-auto bg-muted text-muted-foreground'}`}>
                 <div className="p-3 flex justify-between items-start">
                   <div className="markdown-content">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
@@ -158,9 +162,9 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
                       variant="ghost" 
                       size="icon" 
                       onClick={() => copyToClipboard(msg.content, msg.id)}
-                      className="ml-2 flex-shrink-0 text-gray-300 hover:text-white"
+                      className="ml-2 flex-shrink-0 text-muted-foreground hover:text-primary"
                     >
-                      {copiedMessageId === msg.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      {copiedMessageId === msg.id ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   )}
                 </div>

@@ -94,12 +94,12 @@ const WebhookManager: React.FC<{ webhooks: Webhook[], setWebhooks: React.Dispatc
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 bg-background text-foreground">
       <div className="mb-6">
-        <Card>
+        <Card className="bg-card text-card-foreground">
           <CardHeader>
             <CardTitle>{editingWebhookId ? 'Edit Webhook' : 'Add New Webhook'}</CardTitle>
-            <CardDescription>{editingWebhookId ? 'Update the details for the webhook' : 'Enter the details for a new webhook'}</CardDescription>
+            <CardDescription className="text-muted-foreground">{editingWebhookId ? 'Update the details for the webhook' : 'Enter the details for a new webhook'}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-6">
@@ -111,6 +111,7 @@ const WebhookManager: React.FC<{ webhooks: Webhook[], setWebhooks: React.Dispatc
                   value={newWebhook.label}
                   onChange={handleInputChange}
                   placeholder="Webhook Label"
+                  className="bg-input text-input-foreground"
                 />
               </div>
               <div className="grid gap-2">
@@ -121,6 +122,7 @@ const WebhookManager: React.FC<{ webhooks: Webhook[], setWebhooks: React.Dispatc
                   value={newWebhook.url}
                   onChange={handleInputChange}
                   placeholder="Webhook URL"
+                  className="bg-input text-input-foreground"
                 />
               </div>
               <div className="grid gap-2">
@@ -131,14 +133,15 @@ const WebhookManager: React.FC<{ webhooks: Webhook[], setWebhooks: React.Dispatc
                   value={newWebhook.method}
                   onChange={handleInputChange}
                   placeholder="POST"
+                  className="bg-input text-input-foreground"
                 />
               </div>
               <div className="flex space-x-4">
-                <Button onClick={addWebhook} className="w-full">
+                <Button onClick={addWebhook} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                   {editingWebhookId ? 'Update Webhook' : 'Add Webhook'}
                 </Button>
                 {editingWebhookId && (
-                  <Button onClick={cancelEditing} variant="secondary" className="w-full">
+                  <Button onClick={cancelEditing} variant="secondary" className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/80">
                     Cancel
                   </Button>
                 )}
@@ -150,21 +153,21 @@ const WebhookManager: React.FC<{ webhooks: Webhook[], setWebhooks: React.Dispatc
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {webhooks.map(webhook => (
-          <Card key={webhook.id} className="w-full">
+          <Card key={webhook.id} className="w-full bg-card text-card-foreground">
             <CardHeader>
               <CardTitle>{webhook.label}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4">
                 <div>
-                  <strong>URL:</strong> <div>{webhook.url}</div>
+                  <strong className="text-muted-foreground">URL:</strong> <div>{webhook.url}</div>
                 </div>
                 <div>
-                  <strong>Method:</strong> <div>{webhook.method}</div>
+                  <strong className="text-muted-foreground">Method:</strong> <div>{webhook.method}</div>
                 </div>
                 <div className="flex space-x-2">
-                  <Button onClick={() => startEditing(webhook)} className="w-full">Edit</Button>
-                  <Button onClick={() => deleteWebhook(webhook.id)} variant="destructive" className="w-full">Delete</Button>
+                  <Button onClick={() => startEditing(webhook)} className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/80">Edit</Button>
+                  <Button onClick={() => deleteWebhook(webhook.id)} variant="destructive" className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</Button>
                 </div>
               </div>
             </CardContent>

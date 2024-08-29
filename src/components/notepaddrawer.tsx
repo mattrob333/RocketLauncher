@@ -32,35 +32,35 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className={`fixed inset-y-0 right-0 w-1/4 bg-gray-900 shadow-xl transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+    <div className={`fixed inset-y-0 right-0 w-1/4 bg-background shadow-xl transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
       <div className="h-full flex flex-col">
-        <div className="p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-white">Notepad</h2>
+        <div className="p-4 bg-card border-b border-border flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-card-foreground">Notepad</h2>
           <div className="flex space-x-2">
-            <Button onClick={exportContent} variant="ghost" size="sm" className="text-gray-300 hover:text-white">
+            <Button onClick={exportContent} variant="ghost" size="sm" className="text-muted-foreground hover:text-card-foreground">
               <Download size={16} className="mr-2" />
               Export
             </Button>
-            <Button onClick={onClose} variant="ghost" size="sm" className="text-gray-300 hover:text-white">
+            <Button onClick={onClose} variant="ghost" size="sm" className="text-muted-foreground hover:text-card-foreground">
               <X size={16} />
             </Button>
           </div>
         </div>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-grow flex flex-col">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-800">
-            <TabsTrigger value="write" className="text-gray-300 data-[state=active]:text-white data-[state=active]:bg-gray-700">Write</TabsTrigger>
-            <TabsTrigger value="preview" className="text-gray-300 data-[state=active]:text-white data-[state=active]:bg-gray-700">Preview</TabsTrigger>
-            <TabsTrigger value="text" className="text-gray-300 data-[state=active]:text-white data-[state=active]:bg-gray-700">Plain Text</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 bg-card">
+            <TabsTrigger value="write" className="text-muted-foreground data-[state=active]:text-card-foreground data-[state=active]:bg-secondary">Write</TabsTrigger>
+            <TabsTrigger value="preview" className="text-muted-foreground data-[state=active]:text-card-foreground data-[state=active]:bg-secondary">Preview</TabsTrigger>
+            <TabsTrigger value="text" className="text-muted-foreground data-[state=active]:text-card-foreground data-[state=active]:bg-secondary">Plain Text</TabsTrigger>
           </TabsList>
           <TabsContent value="write" className="flex-grow">
             <textarea
-              className="h-full p-4 w-full resize-none focus:outline-none bg-gray-800 text-white"
+              className="h-full p-4 w-full resize-none focus:outline-none bg-background text-foreground"
               value={content}
               onChange={handleContentChange}
               placeholder="Write your markdown here..."
             />
           </TabsContent>
-          <TabsContent value="preview" className="flex-grow overflow-auto p-4 bg-gray-800 text-white">
+          <TabsContent value="preview" className="flex-grow overflow-auto p-4 bg-background text-foreground">
             <div className="markdown-body">
               <ReactMarkdown 
                 rehypePlugins={[rehypeRaw, rehypeParse]} 
@@ -73,7 +73,7 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
           </TabsContent>
           <TabsContent value="text" className="flex-grow">
             <textarea
-              className="h-full p-4 w-full resize-none focus:outline-none bg-gray-800 text-white font-mono"
+              className="h-full p-4 w-full resize-none focus:outline-none bg-background text-foreground font-mono"
               value={content}
               onChange={handleContentChange}
               placeholder="Edit as plain text..."

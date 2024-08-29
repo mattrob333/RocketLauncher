@@ -22,11 +22,13 @@ function App() {
         // Fetch workflows
         const workflowSnapshot = await getDocs(collection(db, "workflows"));
         const workflowsData = workflowSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workflow));
+        console.log("Fetched workflows:", workflowsData); // Add this line for logging
         setWorkflows(workflowsData);
   
         // Fetch webhooks
         const webhookSnapshot = await getDocs(collection(db, "webhooks"));
         const webhooksData = webhookSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Webhook));
+        console.log("Fetched webhooks:", webhooksData); // Add this line for logging
         setWebhooks(webhooksData);
         
       } catch (error) {

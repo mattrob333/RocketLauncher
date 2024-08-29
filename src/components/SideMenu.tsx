@@ -8,12 +8,12 @@ interface SideMenuProps {
 
 export function SideMenu({ setCurrentView }: SideMenuProps) {
   return (
-    <div className="w-16 bg-background dark:bg-gray-800 p-4 flex flex-col items-center space-y-6">
+    <div className="w-16 bg-background p-4 flex flex-col items-center space-y-6">
       <Button 
         variant="ghost" 
         size="icon" 
         onClick={() => setCurrentView('chat')}
-        className="hover:bg-gray-200 dark:hover:bg-gray-700"
+        className="hover:bg-secondary hover:text-primary"
       >
         <MessageSquare className="h-6 w-6" />
         <span className="sr-only">Chat</span>
@@ -22,7 +22,7 @@ export function SideMenu({ setCurrentView }: SideMenuProps) {
         variant="ghost" 
         size="icon" 
         onClick={() => setCurrentView('manage')}
-        className="hover:bg-gray-200 dark:hover:bg-gray-700"
+        className="hover:bg-secondary hover:text-primary"
       >
         <Settings className="h-6 w-6" />
         <span className="sr-only">Manage</span>
@@ -31,7 +31,7 @@ export function SideMenu({ setCurrentView }: SideMenuProps) {
         variant="ghost" 
         size="icon" 
         onClick={() => setCurrentView('webhooks')}
-        className="hover:bg-gray-200 dark:hover:bg-gray-700"
+        className="hover:bg-secondary hover:text-primary"
       >
         <Globe className="h-6 w-6" />
         <span className="sr-only">Webhooks</span>
