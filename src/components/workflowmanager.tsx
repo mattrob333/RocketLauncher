@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Check, ChevronDown, Pencil, Trash2, X } from "lucide-react";
+import { Check, ChevronDown, Pencil, Trash2, } from "lucide-react";
 import { collection, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from '@/firebase.js';
 import { Workflow } from '@/types';

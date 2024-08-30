@@ -64,7 +64,6 @@ const AppContent: React.FC = () => {
     fetchData();
   }, []);
 
-  // Add error and loading state handling
   if (error) {
     return <div className="text-red-500 p-4">{error}</div>;
   }
@@ -75,7 +74,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-black text-gray-300">
-      <header className="flex justify-between items-center p-4 bg-black text-gray-300 border-b border-gray-800">
+      <header className="flex justify-between items-center p-4 bg-gray-900 text-gray-300 border-b border-gray-800">
         <div className="flex items-center">
           <span className="text-xl font-['Montserrat'] font-medium tracking-[0.104em] uppercase">
             🚀 Rocket Launcher

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, X, FileEdit } from 'lucide-react';
+import {  X  } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@radix-ui/react-tabs';
 import ReactMarkdown from 'react-markdown';

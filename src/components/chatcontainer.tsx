@@ -3,7 +3,6 @@ import { collection, addDoc, onSnapshot, query, orderBy, getDocs, deleteDoc } fr
 import { db } from '@/firebase.js';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Workflow, Webhook } from '@/types';
 import { CornerDownLeft, Mic, Paperclip, Copy, Trash, Loader, Check } from "lucide-react";
@@ -134,14 +133,14 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
           <SelectContent className="bg-gray-800 text-gray-300 border-gray-700">
             {workflows.map((workflow) => (
               workflow.chatflowId ? (
-                <SelectItem key={workflow.id} value={workflow.chatflowId} className="hover:bg-gradient-to-r hover:from-red-500 hover:to-orange-500 hover:text-white">
+                <SelectItem key={workflow.id} value={workflow.chatflowId} className="hover:bg-gray-700">
                   {workflow.title}
                 </SelectItem>
               ) : null
             ))}
           </SelectContent>
         </Select>
-        <Button onClick={clearChat} variant="destructive" size="sm" className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600">
+        <Button onClick={clearChat} variant="destructive" size="sm" className="bg-red-600 hover:bg-red-700">
           <Trash className="h-4 w-4 mr-2" />
           Clear Chat
         </Button>
@@ -155,7 +154,7 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
               <div className={`max-w-[80%] ${msg.sender === 'user' ? 'ml-auto' : 'mr-auto'}`}>
                 <div className={`p-3 flex justify-between items-start ${
                   msg.sender === 'user' 
-                    ? 'bg-gray-900 rounded-lg' // Very dark grey for user messages
+                    ? 'bg-gray-800 rounded-lg' // Dark grey for user messages
                     : '' // No background for bot messages
                 }`}>
                   <div className="markdown-content">
@@ -166,9 +165,9 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
                       variant="ghost" 
                       size="icon" 
                       onClick={() => copyToClipboard(msg.content, msg.id)}
-                      className="ml-2 flex-shrink-0 text-muted-foreground hover:text-orange-400"
+                      className="ml-2 flex-shrink-0 text-gray-400 hover:text-gray-200"
                     >
-                      {copiedMessageId === msg.id ? <Check className="h-4 w-4 text-orange-400" /> : <Copy className="h-4 w-4" />}
+                      {copiedMessageId === msg.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   )}
                 </div>
@@ -177,7 +176,7 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
           ))}
           {loading && (
             <div className="flex justify-center items-center my-4">
-              <Loader className="animate-spin h-6 w-6 text-orange-400" />
+              <Loader className="animate-spin h-6 w-6 text-gray-400" />
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -185,10 +184,10 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
       </div>
 
       {/* Webhook buttons */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-gray-800">
         <div className="flex flex-wrap gap-2">
           {webhooks.map((webhook) => (
-            <Button key={webhook.id} onClick={() => triggerWebhook(webhook)} size="sm" className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white">
+            <Button key={webhook.id} onClick={() => triggerWebhook(webhook)} size="sm" className="bg-gray-700 hover:bg-gray-600 text-white">
               {webhook.label}
             </Button>
           ))}
@@ -196,23 +195,23 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
       </div>
 
       {/* Input area */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-gray-800">
         <form onSubmit={sendMessage} className="relative">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message here..."
-            className="w-full pr-24 bg-secondary text-secondary-foreground resize-none rounded-md"
+            className="w-full pr-24 bg-gray-800 text-gray-200 resize-none rounded-md"
             rows={3}
           />
           <div className="absolute bottom-2 right-2 flex space-x-2">
-            <Button type="button" variant="ghost" size="icon" className="text-orange-400 hover:text-red-500">
+            <Button type="button" variant="ghost" size="icon" className="text-gray-400 hover:text-gray-200">
               <Paperclip className="h-4 w-4" />
             </Button>
-            <Button type="button" variant="ghost" size="icon" className="text-orange-400 hover:text-red-500">
+            <Button type="button" variant="ghost" size="icon" className="text-gray-400 hover:text-gray-200">
               <Mic className="h-4 w-4" />
             </Button>
-            <Button type="submit" variant="ghost" size="icon" className="text-orange-400 hover:text-red-500">
+            <Button type="submit" variant="ghost" size="icon" className="text-gray-400 hover:text-gray-200">
               <CornerDownLeft className="h-4 w-4" />
             </Button>
           </div>
