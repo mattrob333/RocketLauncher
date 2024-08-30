@@ -1,19 +1,19 @@
 import React from 'react';
 import { Button } from "@/components/ui/button"
-import { MessageSquare, Settings, Globe, Home, Notebook } from 'lucide-react'
+import { MessageSquare, Settings, Globe, Home, Notebook, FileEdit } from 'lucide-react'
 
 interface SideMenuProps {
-  setCurrentView: (view: 'landing' | 'chat' | 'manage' | 'webhooks') => void;
+  navigate: (path: string) => void;
   openNotepad: () => void;
 }
 
-export function SideMenu({ setCurrentView, openNotepad }: SideMenuProps) {
+export function SideMenu({ navigate, openNotepad }: SideMenuProps) {
   return (
     <div className="w-16 bg-background p-4 flex flex-col items-center space-y-6">
       <Button 
         variant="ghost" 
         size="icon" 
-        onClick={() => setCurrentView('landing')}
+        onClick={() => navigate('/')}
         className="hover:bg-gradient-to-r hover:from-red-500 hover:to-orange-500 hover:text-white"
       >
         <Home className="h-6 w-6" />
@@ -22,7 +22,7 @@ export function SideMenu({ setCurrentView, openNotepad }: SideMenuProps) {
       <Button 
         variant="ghost" 
         size="icon" 
-        onClick={() => setCurrentView('chat')}
+        onClick={() => navigate('/chat')}
         className="hover:bg-gradient-to-r hover:from-red-500 hover:to-orange-500 hover:text-white"
       >
         <MessageSquare className="h-6 w-6" />
@@ -31,7 +31,7 @@ export function SideMenu({ setCurrentView, openNotepad }: SideMenuProps) {
       <Button 
         variant="ghost" 
         size="icon" 
-        onClick={() => setCurrentView('manage')}
+        onClick={() => navigate('/manage')}
         className="hover:bg-gradient-to-r hover:from-red-500 hover:to-orange-500 hover:text-white"
       >
         <Settings className="h-6 w-6" />
@@ -40,7 +40,7 @@ export function SideMenu({ setCurrentView, openNotepad }: SideMenuProps) {
       <Button 
         variant="ghost" 
         size="icon" 
-        onClick={() => setCurrentView('webhooks')}
+        onClick={() => navigate('/webhooks')}
         className="hover:bg-gradient-to-r hover:from-red-500 hover:to-orange-500 hover:text-white"
       >
         <Globe className="h-6 w-6" />
@@ -54,6 +54,15 @@ export function SideMenu({ setCurrentView, openNotepad }: SideMenuProps) {
       >
         <Notebook className="h-6 w-6" />
         <span className="sr-only">Open Notepad</span>
+      </Button>
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={() => navigate('/markdown')}
+        className="hover:bg-gradient-to-r hover:from-red-500 hover:to-orange-500 hover:text-white"
+      >
+        <FileEdit className="h-6 w-6" />
+        <span className="sr-only">Markdown Editor</span>
       </Button>
     </div>
   )

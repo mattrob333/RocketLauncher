@@ -10,61 +10,73 @@ import LandingPage from "./components/LandingPage"
 import { Workflow, Webhook } from './types';
 import { collection, getDocs } from "firebase/firestore";
 import { db } from '@/firebase.js';
-import rocketLauncherLogo from './assets/rocketlauncher_logo_v2.svg';
+import { Toaster } from "sonner";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import NotepadDrawer from "./components/notepaddrawer";
+
+const queryClient = new QueryClient();
 
 function App() {
-  const [currentView, setCurrentView] = useState<'landing' | 'chat' | 'manage' | 'webhooks'>('landing');
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </ThemeProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+const AppContent: React.FC = () => {
   const [selectedFlowId, setSelectedFlowId] = useState<string>('');
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
+  const [isNotepadOpen, setIsNotepadOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch workflows
         const workflowSnapshot = await getDocs(collection(db, "workflows"));
         const workflowsData = workflowSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workflow));
-        console.log("Fetched workflows:", workflowsData);
         setWorkflows(workflowsData);
-  
-        // Fetch webhooks
+
         const webhookSnapshot = await getDocs(collection(db, "webhooks"));
         const webhooksData = webhookSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Webhook));
-        console.log("Fetched webhooks:", webhooksData);
         setWebhooks(webhooksData);
-        
       } catch (error) {
         console.error("Error fetching data:", error);
       }
     };
-  
+
     fetchData();
   }, []);
-  
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <div className="flex flex-col h-screen bg-black text-gray-300">
-        <header className="flex justify-between items-center p-4 bg-black text-gray-300 border-b border-gray-800">
-          <div className="flex items-center">
-            <img src={rocketLauncherLogo} alt="RocketLauncher Logo" className="h-12 w-auto" />
-            <span className="ml-2 text-xl font-['Montserrat'] font-medium tracking-[0.104em] uppercase">
-              Rocket Launcher
-            </span>
-          </div>
-          <ThemeToggle />
-        </header>
+    <div className="flex flex-col h-screen bg-black text-gray-300">
+      <header className="flex justify-between items-center p-4 bg-black text-gray-300 border-b border-gray-800">
+        <div className="flex items-center">
+          <span className="text-xl font-['Montserrat'] font-medium tracking-[0.104em] uppercase">
+            🚀 Rocket Launcher
+          </span>
+        </div>
+        <ThemeToggle />
+      </header>
 
-        <div className="flex flex-1 overflow-hidden">
-          <div className="border-r border-gray-800">
-            <SideMenu setCurrentView={setCurrentView} openNotepad={() => {}} />
-          </div>
-          <main className="flex-1 overflow-auto bg-black text-gray-300">
-            {currentView === 'landing' && <LandingPage />}
-            {currentView === 'manage' && (
-              <WorkflowManager workflows={workflows} setWorkflows={setWorkflows} />
-            )}
-            {currentView === 'chat' && (
+      <div className="flex flex-1 overflow-hidden">
+        <div className="border-r border-gray-800">
+          <SideMenu navigate={navigate} openNotepad={() => setIsNotepadOpen(true)} />
+        </div>
+        <main className="flex-1 overflow-auto bg-black text-gray-300">
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/chat" element={
               <div className="flex h-full">
                 <div className="flex-1 overflow-hidden flex flex-col">
                   <ChatContainer
@@ -78,14 +90,15 @@ function App() {
                   selectedWorkflow={workflows.find(w => w.chatflowId === selectedFlowId)}
                 />
               </div>
-            )}
-            {currentView === 'webhooks' && (
-              <WebhookManager webhooks={webhooks} setWebhooks={setWebhooks} />
-            )}
-          </main>
-        </div>
+            } />
+            <Route path="/manage" element={<WorkflowManager workflows={workflows} setWorkflows={setWorkflows} />} />
+            <Route path="/webhooks" element={<WebhookManager webhooks={webhooks} setWebhooks={setWebhooks} />} />
+            <Route path="/markdown" element={<NotepadDrawer isOpen={isNotepadOpen} onClose={() => setIsNotepadOpen(false)} />} />
+          </Routes>
+        </main>
+        <NotepadDrawer isOpen={isNotepadOpen} onClose={() => setIsNotepadOpen(false)} />
       </div>
-    </ThemeProvider>
+    </div>
   );
 }
 
