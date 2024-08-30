@@ -9,7 +9,7 @@ interface SideMenuProps {
 
 export function SideMenu({ navigate, openNotepad }: SideMenuProps) {
   return (
-    <div className="w-16 bg-gray-900 p-4 flex flex-col items-center space-y-6">
+    <div className="w-16 bg-black p-4 flex flex-col items-center space-y-6">
       <Button 
         variant="ghost" 
         size="icon" 
