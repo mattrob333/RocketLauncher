@@ -9,7 +9,7 @@ import WebhookManager from "./components/webhookmanager"
 import LandingPage from "./components/LandingPage"
 import { Workflow, Webhook } from './types';
 import { collection, getDocs } from "firebase/firestore";
-import { db } from '@/firebase.js';
+import { db } from './firebase';
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -39,10 +39,13 @@ const AppContent: React.FC = () => {
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [isNotepadOpen, setIsNotepadOpen] = useState(false);
   const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setIsLoading(true);
         const workflowSnapshot = await getDocs(collection(db, "workflows"));
         const workflowsData = workflowSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workflow));
         setWorkflows(workflowsData);
@@ -52,6 +55,9 @@ const AppContent: React.FC = () => {
         setWebhooks(webhooksData);
       } catch (error) {
         console.error("Error fetching data:", error);
+        setError("Failed to load data. Please refresh the page.");
+      } finally {
+        setIsLoading(false);
       }
     };
 

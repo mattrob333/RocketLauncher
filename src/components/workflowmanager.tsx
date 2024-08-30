@@ -118,6 +118,12 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({ workflows, setWorkflo
     setEditedWorkflow(null);
   };
 
+  const confirmDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this workflow?')) {
+      deleteWorkflow(id);
+    }
+  };
+
   return (
     <div className="h-full overflow-auto p-6 bg-background text-foreground">
       <h1 className="text-2xl font-bold mb-6">Workflow Manager</h1>
@@ -234,7 +240,7 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({ workflows, setWorkflo
                         <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-card-foreground" onClick={() => handleEdit(workflow)}>
                           <Pencil size={16} />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground" onClick={() => deleteWorkflow(workflow.id)}>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground" onClick={() => confirmDelete(workflow.id)}>
                           <Trash2 size={16} />
                         </Button>
                       </div>

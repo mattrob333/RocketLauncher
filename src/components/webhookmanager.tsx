@@ -24,6 +24,17 @@ const WebhookManager: React.FC<{ webhooks: Webhook[], setWebhooks: React.Dispatc
 
   const [editingWebhookId, setEditingWebhookId] = useState<string | null>(null);
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!newWebhook.label) newErrors.label = 'Label is required';
+    if (!newWebhook.url) newErrors.url = 'URL is required';
+    if (!newWebhook.method) newErrors.method = 'Method is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   useEffect(() => {
     const fetchWebhooks = async () => {
       try {
@@ -45,6 +56,7 @@ const WebhookManager: React.FC<{ webhooks: Webhook[], setWebhooks: React.Dispatc
   };
 
   const addWebhook = async () => {
+    if (!validateForm()) return;
     try {
       if (editingWebhookId) {
         const webhookDoc = doc(db, "webhooks", editingWebhookId);
@@ -111,8 +123,9 @@ const WebhookManager: React.FC<{ webhooks: Webhook[], setWebhooks: React.Dispatc
                   value={newWebhook.label}
                   onChange={handleInputChange}
                   placeholder="Webhook Label"
-                  className="bg-input text-input-foreground"
+                  className={`bg-input text-input-foreground ${errors.label ? 'border-red-500' : ''}`}
                 />
+                {errors.label && <p className="text-red-500 text-sm">{errors.label}</p>}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="url">URL</Label>

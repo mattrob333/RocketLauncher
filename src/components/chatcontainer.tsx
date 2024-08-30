@@ -152,8 +152,12 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
         <div className="flex flex-col space-y-4 px-4 py-2">
           {messages.map((msg, index) => (
             <div key={msg.id} className={`flex flex-col ${index > 0 && messages[index - 1].sender !== msg.sender ? 'mt-4' : ''}`}>
-              <div className={`rounded-lg border shadow-sm max-w-[80%] ${msg.sender === 'user' ? 'ml-auto bg-gradient-to-r from-red-500 to-orange-500 text-white' : 'mr-auto bg-muted text-muted-foreground'}`}>
-                <div className="p-3 flex justify-between items-start">
+              <div className={`max-w-[80%] ${msg.sender === 'user' ? 'ml-auto' : 'mr-auto'}`}>
+                <div className={`p-3 flex justify-between items-start ${
+                  msg.sender === 'user' 
+                    ? 'bg-gray-900 rounded-lg' // Very dark grey for user messages
+                    : '' // No background for bot messages
+                }`}>
                   <div className="markdown-content">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
