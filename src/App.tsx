@@ -64,6 +64,15 @@ const AppContent: React.FC = () => {
     fetchData();
   }, []);
 
+  // Add error and loading state handling
+  if (error) {
+    return <div className="text-red-500 p-4">{error}</div>;
+  }
+
+  if (isLoading) {
+    return <div className="text-white p-4">Loading...</div>;
+  }
+
   return (
     <div className="flex flex-col h-screen bg-black text-gray-300">
       <header className="flex justify-between items-center p-4 bg-black text-gray-300 border-b border-gray-800">

@@ -1,4 +1,4 @@
-import React from 'react';
+// No need to import React in modern versions of React with TypeScript
 import { Button } from "@/components/ui/button"
 import { MessageSquare, Settings, Globe, Home, Notebook, FileEdit } from 'lucide-react'
 
