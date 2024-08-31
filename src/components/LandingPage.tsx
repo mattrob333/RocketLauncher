@@ -25,13 +25,13 @@ const LandingPage: React.FC = () => {
           <h3 className="text-3xl font-bold mb-8 text-gray-100">Featured Workflows</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="bg-gray-900 border-gray-800">
+              <Card key={i} className="bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-gray-100">Workflow {i}</CardTitle>
+                  <CardTitle className="text-card-foreground">Workflow {i}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-300">Description of featured workflow {i}</p>
-                  <Button variant="link" className="text-orange-400 mt-4">
+                  <p className="text-muted-foreground">Description of featured workflow {i}</p>
+                  <Button variant="link" className="text-primary mt-4">
                     Learn More <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </CardContent>
@@ -52,18 +52,18 @@ const LandingPage: React.FC = () => {
           <h3 className="text-3xl font-bold mb-8 text-gray-100">Top Freelancers</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="bg-gray-900 border-gray-800">
+              <Card key={i} className="bg-card border-border">
                 <CardContent className="pt-6">
                   <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 rounded-full bg-gray-700"></div>
+                    <div className="w-16 h-16 rounded-full bg-secondary"></div>
                     <div>
-                      <h4 className="font-bold text-gray-100">Freelancer {i}</h4>
-                      <p className="text-sm text-gray-300">Specialty</p>
+                      <h4 className="font-bold text-card-foreground">Freelancer {i}</h4>
+                      <p className="text-sm text-muted-foreground">Specialty</p>
                     </div>
                   </div>
                   <div className="flex items-center mt-4">
-                    <Star className="text-orange-400 h-5 w-5" />
-                    <span className="ml-2 text-gray-300">4.9 (120 reviews)</span>
+                    <Star className="text-primary h-5 w-5" />
+                    <span className="ml-2 text-muted-foreground">4.9 (120 reviews)</span>
                   </div>
                 </CardContent>
               </Card>
@@ -76,10 +76,10 @@ const LandingPage: React.FC = () => {
           <h3 className="text-3xl font-bold mb-8 text-gray-100">Explore by Department</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {['Marketing', 'Copywriting', 'Social Media'].map((dept) => (
-              <Card key={dept} className="bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer border-gray-800">
+              <Card key={dept} className="bg-card hover:bg-secondary transition-colors cursor-pointer border-border">
                 <CardContent className="flex items-center justify-between p-6">
-                  <h4 className="text-xl font-semibold text-gray-100">{dept}</h4>
-                  <ArrowRight className="h-6 w-6 text-orange-400" />
+                  <h4 className="text-xl font-semibold text-card-foreground">{dept}</h4>
+                  <ArrowRight className="h-6 w-6 text-primary" />
                 </CardContent>
               </Card>
             ))}
@@ -91,13 +91,13 @@ const LandingPage: React.FC = () => {
           <h3 className="text-3xl font-bold mb-8 text-gray-100">Workflow Deals</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="bg-gray-900 border-gray-800">
+              <Card key={i} className="bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-gray-100">Deal {i}</CardTitle>
+                  <CardTitle className="text-card-foreground">Deal {i}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="mb-4 text-gray-300">Amazing workflow at a discounted price!</p>
-                  <Button className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-gray-100">Get Deal</Button>
+                  <p className="mb-4 text-muted-foreground">Amazing workflow at a discounted price!</p>
+                  <Button className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-primary-foreground">Get Deal</Button>
                 </CardContent>
               </Card>
             ))}
