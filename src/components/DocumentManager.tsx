@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Copy, Trash2, Folder, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { ChevronDown, ChevronRight } from 'lucide-react'; // Add these imports
 import {
   Dialog,
   DialogContent,
@@ -24,8 +25,14 @@ interface Document {
   content: string;
 }
 
+interface CompanyDocuments {
+  [company: string]: Document[];
+}
+
 const DocumentManager: React.FC = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [groupedDocuments, setGroupedDocuments] = useState<CompanyDocuments>({});
+  const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [newDocument, setNewDocument] = useState<Omit<Document, 'id'>>({
     title: '',
@@ -38,6 +45,17 @@ const DocumentManager: React.FC = () => {
   useEffect(() => {
     fetchDocuments();
   }, []);
+
+  useEffect(() => {
+    const grouped = documents.reduce((acc, doc) => {
+      if (!acc[doc.company]) {
+        acc[doc.company] = [];
+      }
+      acc[doc.company].push(doc);
+      return acc;
+    }, {} as CompanyDocuments);
+    setGroupedDocuments(grouped);
+  }, [documents]);
 
   const fetchDocuments = async () => {
     const querySnapshot = await getDocs(collection(db, "markdownFiles"));
@@ -59,10 +77,12 @@ const DocumentManager: React.FC = () => {
   const addDocument = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await addDoc(collection(db, "markdownFiles"), newDocument);
+      const docRef = await addDoc(collection(db, "markdownFiles"), newDocument);
       setNewDocument({ title: '', docType: '', content: '', company: '' });
       fetchDocuments();
       setIsAddDialogOpen(false);
+      setSelectedCompany(newDocument.company);
+      setExpandedCompanies(prev => new Set(prev).add(newDocument.company));
       toast.success("Document added successfully!");
     } catch (error) {
       console.error("Error adding document: ", error);
@@ -89,6 +109,23 @@ const DocumentManager: React.FC = () => {
     });
   };
 
+  const toggleCompanyExpansion = (company: string) => {
+    setExpandedCompanies(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(company)) {
+        newSet.delete(company);
+      } else {
+        newSet.add(company);
+      }
+      return newSet;
+    });
+  };
+
+  const handleCompanyClick = (company: string) => {
+    toggleCompanyExpansion(company);
+    setSelectedCompany(prev => prev === company ? null : company);
+  };
+
   return (
     <div className="p-6 bg-background text-foreground">
       <h1 className="text-2xl font-bold mb-6">Document Manager</h1>
@@ -99,23 +136,46 @@ const DocumentManager: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {companies.map((company) => (
-                <Button
-                  key={company}
-                  variant={selectedCompany === company ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setSelectedCompany(company)}
-                >
-                  <Folder className="mr-2 h-4 w-4" />
-                  {company}
-                </Button>
+              {Object.entries(groupedDocuments).map(([company, docs]) => (
+                <div key={company}>
+                  <Button
+                    variant={selectedCompany === company ? "secondary" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => handleCompanyClick(company)}
+                  >
+                    {expandedCompanies.has(company) ? (
+                      <ChevronDown className="mr-2 h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="mr-2 h-4 w-4" />
+                    )}
+                    {company} ({docs.length})
+                  </Button>
+                  {expandedCompanies.has(company) && (
+                    <div className="ml-4 space-y-1">
+                      {docs.map((doc) => (
+                        <Button
+                          key={doc.id}
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start"
+                          onClick={() => copyToClipboard(doc.content)}
+                        >
+                          <Folder className="mr-2 h-3 w-3" />
+                          {doc.title}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </CardContent>
         </Card>
         <div className="lg:col-span-3">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Documents</h2>
+            <h2 className="text-xl font-semibold">
+              {selectedCompany ? `Documents for ${selectedCompany}` : 'All Documents'}
+            </h2>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -172,7 +232,7 @@ const DocumentManager: React.FC = () => {
             </Dialog>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredDocuments.map((doc) => (
+            {(selectedCompany ? groupedDocuments[selectedCompany] || [] : documents).map((doc) => (
               <Card key={doc.id}>
                 <CardHeader>
                   <CardTitle>{doc.title}</CardTitle>
