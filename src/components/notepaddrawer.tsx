@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@radix-ui/react-tabs';
 import ReactMarkdown from 'react-markdown';
@@ -21,7 +21,7 @@ interface NotepadDrawerProps {
 
 const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('view');
-  const [markdown, setMarkdown] = useState('# Welcome to the Markdown Editor\n\nStart typing your markdown here...');
+  const [markdown, setMarkdown] = useState('');
   const [company, setCompany] = useState('');
   const [docType, setDocType] = useState('');
   const [title, setTitle] = useState('');
@@ -35,10 +35,7 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     fetchCompanies();
-    const savedMarkdown = localStorage.getItem('markdown');
-    if (savedMarkdown) {
-      setMarkdown(savedMarkdown);
-    }
+    // Remove the localStorage retrieval to prevent loading old content
   }, []);
 
   const fetchCompanies = async () => {
@@ -48,7 +45,6 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
   };
 
   const handleSave = () => {
-    localStorage.setItem('markdown', markdown);
     const blob = new Blob([markdown], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -93,7 +89,7 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
       setCompany('');
       setDocType('');
       setTitle('');
-      setMarkdown('# New Document\n\nStart typing your markdown here...');
+      setMarkdown('');
       fetchCompanies(); // Refresh the list of companies
     } catch (error) {
       console.error("Error storing document: ", error);
@@ -141,15 +137,29 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleClear = () => {
+    setMarkdown('');
+    setTitle('');
+    setCompany('');
+    setDocType('');
+    setFileName('untitled.md');
+    toast.success("Notepad cleared!");
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-y-0 right-0 w-1/2 min-w-[50vw] bg-background shadow-lg z-50 flex flex-col">
       <div className="flex justify-between items-center p-4 border-b">
         <h2 className="text-lg font-semibold">Notepad</h2>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex space-x-2">
+          <Button variant="ghost" size="icon" onClick={handleClear}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
@@ -168,7 +178,7 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
           </ReactMarkdown>
         </TabsContent>
 
-        <TabsContent value="edit" className="flex-1 flex flex-col">
+        <TabsContent value="edit" className="flex-1 flex flex-col overflow-hidden">
           <div className="flex flex-col space-y-2 p-2">
             {isAddingNewCompany ? (
               <div className="flex items-center space-x-2">
@@ -228,13 +238,14 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
               <Button onClick={handleSave}>Save</Button>
             </div>
           </div>
-          <MDEditor
-            value={markdown}
-            onChange={(value) => setMarkdown(value || '')}
-            className="flex-grow"
-            height="calc(100% - 200px)"
-            preview="edit"
-          />
+          <div className="flex-grow overflow-auto">
+            <MDEditor
+              value={markdown}
+              onChange={(value) => setMarkdown(value || '')}
+              height="100%"
+              preview="edit"
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

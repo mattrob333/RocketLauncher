@@ -6,16 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Copy, Trash2, Folder, Plus } from "lucide-react";
+import { Copy, Trash2, Folder, Plus, X } from "lucide-react";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight } from 'lucide-react'; // Add these imports
-import {
-  Dialog,
-  DialogContent,
-  // DialogHeader removed as it's not exported from @radix-ui/react-dialog
-  DialogTitle,
-  DialogTrigger,
-} from "@radix-ui/react-dialog";
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from "@radix-ui/react-dialog";
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import rehypeParse from 'rehype-parse';
+import '../styles/markdown-styles.css';
+import '@/styles/markdown-styles.css';
 
 interface Document {
   id: string;
@@ -41,6 +41,7 @@ const DocumentManager: React.FC = () => {
     company: '',
   });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
 
   useEffect(() => {
     fetchDocuments();
@@ -126,6 +127,10 @@ const DocumentManager: React.FC = () => {
     setSelectedCompany(prev => prev === company ? null : company);
   };
 
+  const handleDocumentClick = (doc: Document) => {
+    setSelectedDocument(doc);
+  };
+
   return (
     <div className="p-6 bg-background text-foreground">
       <h1 className="text-2xl font-bold mb-6">Document Manager</h1>
@@ -158,7 +163,7 @@ const DocumentManager: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           className="w-full justify-start"
-                          onClick={() => copyToClipboard(doc.content)}
+                          onClick={() => handleDocumentClick(doc)}
                         >
                           <Folder className="mr-2 h-3 w-3" />
                           {doc.title}
@@ -174,7 +179,7 @@ const DocumentManager: React.FC = () => {
         <div className="lg:col-span-3">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">
-              {selectedCompany ? `Documents for ${selectedCompany}` : 'All Documents'}
+              {selectedDocument ? selectedDocument.title : 'Document Viewer'}
             </h2>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
@@ -184,7 +189,6 @@ const DocumentManager: React.FC = () => {
                 </Button>
               </DialogTrigger>
               <DialogContent>
-                
                 <form onSubmit={addDocument} className="space-y-4">
                   <div>
                     <Label htmlFor="title">Title</Label>
@@ -231,28 +235,46 @@ const DocumentManager: React.FC = () => {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(selectedCompany ? groupedDocuments[selectedCompany] || [] : documents).map((doc) => (
-              <Card key={doc.id}>
-                <CardHeader>
-                  <CardTitle>{doc.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-2">Company: {doc.company}</p>
-                  <p className="text-sm text-muted-foreground mb-4">Type: {doc.docType}</p>
-                  <div className="flex space-x-2">
-                    <Button onClick={() => copyToClipboard(doc.content)} className="flex-1">
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copy Content
-                    </Button>
-                    <Button onClick={() => deleteDocument(doc.id)} variant="destructive">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+          {selectedDocument ? (
+            <Card className="overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between bg-muted">
+                <CardTitle>{selectedDocument.title}</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setSelectedDocument(null)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="bg-muted p-4">
+                  <p className="text-sm text-muted-foreground">Company: {selectedDocument.company}</p>
+                  <p className="text-sm text-muted-foreground">Type: {selectedDocument.docType}</p>
+                </div>
+                <div className="p-6 max-h-[calc(100vh-300px)] overflow-y-auto bg-black text-white">
+                  <div className="markdown-body prose prose-invert max-w-none">
+                    <ReactMarkdown
+                      rehypePlugins={[rehypeRaw, rehypeParse]}
+                      remarkPlugins={[remarkGfm]}
+                    >
+                      {selectedDocument.content}
+                    </ReactMarkdown>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                </div>
+                <div className="flex justify-end space-x-2 p-4 bg-muted">
+                  <Button onClick={() => copyToClipboard(selectedDocument.content)}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy Content
+                  </Button>
+                  <Button onClick={() => deleteDocument(selectedDocument.id)} variant="destructive">
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="text-center text-muted-foreground">
+              Select a document to view its content
+            </div>
+          )}
         </div>
       </div>
     </div>
