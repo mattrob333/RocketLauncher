@@ -1,6 +1,6 @@
 // No need to import React in modern versions of React with TypeScript
 import { Button } from "@/components/ui/button"
-import { MessageSquare, Settings, Globe, Home, Notebook, FileEdit } from 'lucide-react'
+import { MessageSquare, Settings, Globe, Home, Notebook, FileEdit, FileText } from 'lucide-react'
 
 interface SideMenuProps {
   navigate: (path: string) => void;
@@ -63,6 +63,15 @@ export function SideMenu({ navigate, openNotepad }: SideMenuProps) {
       >
         <FileEdit className="h-6 w-6" />
         <span className="sr-only">Markdown Editor</span>
+      </Button>
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={() => navigate('/documents')}
+        className="text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+      >
+        <FileText className="h-6 w-6" />
+        <span className="sr-only">Documents</span>
       </Button>
     </div>
   )

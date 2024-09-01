@@ -10,6 +10,9 @@ import '../styles/markdown-styles.css';
 import MDEditor from '@uiw/react-md-editor';
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { addDoc, collection } from "firebase/firestore";
+import { db } from '@/firebase';
 
 interface NotepadDrawerProps {
   isOpen: boolean;
@@ -19,6 +22,9 @@ interface NotepadDrawerProps {
 const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('view');
   const [markdown, setMarkdown] = useState('# Welcome to the Markdown Editor\n\nStart typing your markdown here...');
+  const [company, setCompany] = useState('');
+  const [docType, setDocType] = useState('');
+  const [title, setTitle] = useState('');
   const [fileName, setFileName] = useState('untitled.md');
 
   useEffect(() => {
@@ -56,6 +62,31 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleStoreInDocs = async () => {
+    if (!company || !docType || !title) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "markdownFiles"), {
+        company,
+        docType,
+        title,
+        content: markdown,
+      });
+      toast.success("Document stored successfully!");
+      // Reset form fields
+      setCompany('');
+      setDocType('');
+      setTitle('');
+      setMarkdown('# New Document\n\nStart typing your markdown here...');
+    } catch (error) {
+      console.error("Error storing document: ", error);
+      toast.error("Failed to store document.");
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -84,13 +115,26 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
         </TabsContent>
 
         <TabsContent value="edit" className="flex-1 flex flex-col">
-          <div className="flex justify-between items-center p-2">
+          <div className="flex justify-between items-center p-2 space-x-2">
             <Input
-              type="file"
-              accept=".md"
-              onChange={handleLoad}
+              placeholder="Company"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
               className="max-w-xs"
             />
+            <Input
+              placeholder="Document Type"
+              value={docType}
+              onChange={(e) => setDocType(e.target.value)}
+              className="max-w-xs"
+            />
+            <Input
+              placeholder="Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="max-w-xs"
+            />
+            <Button onClick={handleStoreInDocs}>Store in Docs</Button>
             <Button onClick={handleSave}>Save</Button>
           </div>
           <MDEditor

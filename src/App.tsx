@@ -15,6 +15,7 @@ import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import NotepadDrawer from "./components/notepaddrawer";
+import DocumentManager from "./components/DocumentManager";
 
 const queryClient = new QueryClient();
 
@@ -107,6 +108,7 @@ const AppContent: React.FC = () => {
             } />
             <Route path="/manage" element={<WorkflowManager workflows={workflows} setWorkflows={setWorkflows} />} />
             <Route path="/webhooks" element={<WebhookManager webhooks={webhooks} setWebhooks={setWebhooks} />} />
+            <Route path="/documents" element={<DocumentManager />} />
             <Route path="/markdown" element={<NotepadDrawer isOpen={isNotepadOpen} onClose={() => setIsNotepadOpen(false)} />} />
           </Routes>
         </main>
