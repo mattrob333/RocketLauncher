@@ -19,59 +19,26 @@ import DocumentManager from "./components/DocumentManager";
 
 const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <BrowserRouter>
-            <AppContent />
-          </BrowserRouter>
-        </ThemeProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-}
-
-const AppContent: React.FC = () => {
+function AppContent() {
   const [selectedFlowId, setSelectedFlowId] = useState<string>('');
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [isNotepadOpen, setIsNotepadOpen] = useState(false);
   const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const workflowSnapshot = await getDocs(collection(db, "workflows"));
-        const workflowsData = workflowSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workflow));
-        setWorkflows(workflowsData);
+      const workflowSnapshot = await getDocs(collection(db, "workflows"));
+      const workflowsData = workflowSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workflow));
+      setWorkflows(workflowsData);
 
-        const webhookSnapshot = await getDocs(collection(db, "webhooks"));
-        const webhooksData = webhookSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Webhook));
-        setWebhooks(webhooksData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setError("Failed to load data. Please refresh the page.");
-      } finally {
-        setIsLoading(false);
-      }
+      const webhookSnapshot = await getDocs(collection(db, "webhooks"));
+      const webhooksData = webhookSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Webhook));
+      setWebhooks(webhooksData);
     };
 
     fetchData();
   }, []);
-
-  if (error) {
-    return <div className="text-red-500 p-4">{error}</div>;
-  }
-
-  if (isLoading) {
-    return <div className="text-white p-4">Loading...</div>;
-  }
 
   return (
     <div className="flex flex-col h-screen bg-black text-gray-300">
@@ -109,12 +76,26 @@ const AppContent: React.FC = () => {
             <Route path="/manage" element={<WorkflowManager workflows={workflows} setWorkflows={setWorkflows} />} />
             <Route path="/webhooks" element={<WebhookManager webhooks={webhooks} setWebhooks={setWebhooks} />} />
             <Route path="/documents" element={<DocumentManager />} />
-            <Route path="/markdown" element={<NotepadDrawer isOpen={isNotepadOpen} onClose={() => setIsNotepadOpen(false)} />} />
           </Routes>
         </main>
         <NotepadDrawer isOpen={isNotepadOpen} onClose={() => setIsNotepadOpen(false)} />
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <TooltipProvider>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+          <Toaster />
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

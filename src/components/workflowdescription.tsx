@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@radix-ui/react-collapsible";
-import { Check, ChevronDown, Pencil } from "lucide-react";
+import { Check, ChevronDown, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Workflow } from '@/types';
 import NotepadDrawer from "@/components/notepaddrawer";
@@ -12,6 +12,10 @@ interface WorkflowDescriptionProps {
 
 export function WorkflowDescription({ selectedWorkflow }: WorkflowDescriptionProps) {
   const [isNotepadOpen, setIsNotepadOpen] = useState(false);
+
+  const toggleNotepad = () => {
+    setIsNotepadOpen(!isNotepadOpen);
+  };
 
   return (
     <div className="w-1/4 flex flex-col h-full bg-background text-foreground border-l border-border">
@@ -95,11 +99,20 @@ export function WorkflowDescription({ selectedWorkflow }: WorkflowDescriptionPro
       {/* Notepad Button */}
       <div className="p-4 bg-card flex justify-end">
         <Button
-          onClick={() => setIsNotepadOpen(true)}
+          onClick={toggleNotepad}
           className="bg-primary hover:bg-primary/90 text-primary-foreground"
         >
-          <Pencil className="mr-2 h-4 w-4" />
-          Open Notepad
+          {isNotepadOpen ? (
+            <>
+              <X className="mr-2 h-4 w-4" />
+              Close Notepad
+            </>
+          ) : (
+            <>
+              <Pencil className="mr-2 h-4 w-4" />
+              Open Notepad
+            </>
+          )}
         </Button>
       </div>
 

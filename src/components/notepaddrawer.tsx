@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@radix-ui/react-tabs';
 import ReactMarkdown from 'react-markdown';
@@ -11,7 +11,7 @@ import MDEditor from '@uiw/react-md-editor';
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { addDoc, collection, getDocs } from "firebase/firestore";
+import { addDoc, collection, getDocs, setDoc, doc } from "firebase/firestore";
 import { db } from '@/firebase';
 
 interface NotepadDrawerProps {
@@ -35,13 +35,24 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     fetchCompanies();
-    // Remove the localStorage retrieval to prevent loading old content
+    fetchDocTypes();
   }, []);
 
   const fetchCompanies = async () => {
     const querySnapshot = await getDocs(collection(db, "markdownFiles"));
     const uniqueCompanies = new Set(querySnapshot.docs.map(doc => doc.data().company));
     setCompanies(Array.from(uniqueCompanies));
+  };
+
+  const fetchDocTypes = async () => {
+    const docTypesDoc = await getDocs(collection(db, "docTypes"));
+    if (docTypesDoc.docs.length > 0) {
+      setDocTypes(docTypesDoc.docs[0].data().types);
+    } else {
+      // If no document exists, create one with default types
+      await setDoc(doc(db, "docTypes", "defaultTypes"), { types: ['SOP', 'Policy', 'Guide', 'Other'] });
+      setDocTypes(['SOP', 'Policy', 'Guide', 'Other']);
+    }
   };
 
   const handleSave = () => {
@@ -109,9 +120,11 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleAddNewDocType = () => {
+  const handleAddNewDocType = async () => {
     if (newDocType && !docTypes.includes(newDocType)) {
-      setDocTypes(prev => [...prev, newDocType]);
+      const updatedDocTypes = [...docTypes, newDocType];
+      await setDoc(doc(db, "docTypes", "defaultTypes"), { types: updatedDocTypes });
+      setDocTypes(updatedDocTypes);
       setDocType(newDocType);
       setNewDocType('');
       setIsAddingNewDocType(false);

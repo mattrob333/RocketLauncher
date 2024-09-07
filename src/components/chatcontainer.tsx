@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Workflow, Webhook } from '@/types';
-import { CornerDownLeft, Mic, Paperclip, Copy, Trash, Loader, Check } from "lucide-react";
+import { Mic, Paperclip, Copy, Trash, Loader, Check, Send } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
-import '@/styles/markdown.css'; // Import the CSS file
+import '@/styles/markdown.css';
 
 const API_BASE_URL = 'https://flowise-jc8z.onrender.com/api/v1/prediction/';
 
@@ -18,17 +18,8 @@ interface ChatContainerProps {
   webhooks: Webhook[];
 }
 
-interface Message {
-  id: string;
-  content: string;
-  sender: 'user' | 'bot';
-  timestamp: Date;
-}
-
-export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, webhooks }: ChatContainerProps) {
-  console.log("ChatContainer rendering with workflows:", workflows);
-
-  const [messages, setMessages] = useState<Message[]>([]);
+export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows }: ChatContainerProps) {
+  const [messages, setMessages] = useState<{ id: string; content: string; timestamp: Date; sender: string }[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
@@ -38,7 +29,7 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
     if (selectedFlowId) {
       const q = query(collection(db, `chats/${selectedFlowId}/messages`), orderBy('timestamp'));
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message)));
+        setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as { id: string; content: string; timestamp: Date; sender: string })));
       });
       return () => unsubscribe();
     }
@@ -79,20 +70,10 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
           timestamp: new Date(),
           sender: 'bot'
         });
-      } finally {
-        setLoading(false);
       }
-    }
-  };
 
-  const copyToClipboard = (text: string, messageId: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      console.log('Copied to clipboard');
-      setCopiedMessageId(messageId);
-      setTimeout(() => setCopiedMessageId(null), 2000); // Reset after 2 seconds
-    }).catch(err => {
-      console.error('Failed to copy: ', err);
-    });
+      setLoading(false);
+    }
   };
 
   const clearChat = async () => {
@@ -106,20 +87,13 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
     }
   };
 
-  const triggerWebhook = async (webhook: Webhook) => {
-    if (messages.length === 0) return;
-    const latestMessage = messages[messages.length - 1].content;
-    try {
-      const response = await fetch(webhook.url, {
-        method: webhook.method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: latestMessage }),
-      });
-      if (!response.ok) throw new Error('Webhook request failed');
-      console.log('Webhook triggered successfully');
-    } catch (error) {
-      console.error('Error triggering webhook:', error);
-    }
+  const copyToClipboard = (text: string, messageId: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedMessageId(messageId);
+      setTimeout(() => setCopiedMessageId(null), 2000);
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+    });
   };
 
   return (
@@ -132,11 +106,11 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
           </SelectTrigger>
           <SelectContent className="bg-gray-800 text-gray-300 border-gray-700">
             {workflows.map((workflow) => (
-              workflow.chatflowId ? (
+              workflow.chatflowId && (
                 <SelectItem key={workflow.id} value={workflow.chatflowId} className="hover:bg-gray-700">
                   {workflow.title}
                 </SelectItem>
-              ) : null
+              )
             ))}
           </SelectContent>
         </Select>
@@ -146,7 +120,7 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
         </Button>
       </div>
 
-      {/* Scrollable messages area */}
+      {/* Messages area */}
       <div className="flex-1 overflow-y-auto">
         <div className="flex flex-col space-y-4 px-4 py-2">
           {messages.map((msg, index) => (
@@ -154,13 +128,13 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
               <div className={`max-w-[80%] ${msg.sender === 'user' ? 'ml-auto' : 'mr-auto'}`}>
                 <div className={`p-3 flex justify-between items-start ${
                   msg.sender === 'user' 
-                    ? 'bg-gray-800 rounded-lg' // Dark grey for user messages
-                    : '' // No background for bot messages
+                    ? 'bg-gray-800 rounded-lg' 
+                    : ''
                 }`}>
                   <div className="markdown-content">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
-                  {msg.sender === 'bot' && (
+                  {msg.sender !== 'user' && (
                     <Button 
                       variant="ghost" 
                       size="icon" 
@@ -183,24 +157,13 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
         </div>
       </div>
 
-      {/* Webhook buttons */}
-      <div className="p-4 border-t border-gray-800">
-        <div className="flex flex-wrap gap-2">
-          {webhooks.map((webhook) => (
-            <Button key={webhook.id} onClick={() => triggerWebhook(webhook)} size="sm" className="bg-gray-700 hover:bg-gray-600 text-white">
-              {webhook.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-
       {/* Input area */}
       <div className="p-4 border-t border-gray-800">
         <form onSubmit={sendMessage} className="relative">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message here..."
+            placeholder="Ask the workflow..."
             className="w-full pr-24 bg-gray-800 text-gray-200 resize-none rounded-md"
             rows={3}
           />
@@ -212,7 +175,7 @@ export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, we
               <Mic className="h-4 w-4" />
             </Button>
             <Button type="submit" variant="ghost" size="icon" className="text-gray-400 hover:text-gray-200">
-              <CornerDownLeft className="h-4 w-4" />
+              <Send className="h-4 w-4" />
             </Button>
           </div>
         </form>

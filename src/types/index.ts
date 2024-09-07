@@ -19,3 +19,12 @@ export interface Webhook {
   url: string;
   method: string;
 }
+
+export interface Expert {
+  id: string;
+  name: string;
+  role: string;
+  description: string;
+  avatar: string;
+  assistantId?: string;
+}
