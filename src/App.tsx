@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ThemeProvider } from "next-themes"
 import { ThemeToggle } from "./components/theme-toggle"
 import { SideMenu } from "./components/SideMenu"
@@ -7,79 +7,87 @@ import { WorkflowDescription } from "./components/workflowdescription"
 import WorkflowManager from "./components/workflowmanager"
 import WebhookManager from "./components/webhookmanager"
 import LandingPage from "./components/LandingPage"
-import { Workflow, Webhook } from './types';
-import { collection, getDocs } from "firebase/firestore";
-import { db } from './firebase';
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import NotepadDrawer from "./components/notepaddrawer";
 import DocumentManager from "./components/DocumentManager";
+import { Workflow, Webhook } from '@/types';
+import { collection, getDocs } from "firebase/firestore";
+import { db } from '@/firebase.js';
 
 const queryClient = new QueryClient();
 
 function AppContent() {
-  const [selectedFlowId, setSelectedFlowId] = useState<string>('');
+  const navigate = useNavigate();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
+  const [selectedFlowId, setSelectedFlowId] = useState<string>('');
   const [isNotepadOpen, setIsNotepadOpen] = useState(false);
-  const navigate = useNavigate();
+  const [openAIKey, setOpenAIKey] = useState<string>('');
 
   useEffect(() => {
-    const fetchData = async () => {
-      const workflowSnapshot = await getDocs(collection(db, "workflows"));
-      const workflowsData = workflowSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workflow));
-      setWorkflows(workflowsData);
-
-      const webhookSnapshot = await getDocs(collection(db, "webhooks"));
-      const webhooksData = webhookSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Webhook));
-      setWebhooks(webhooksData);
+    const fetchWorkflows = async () => {
+      const workflowsCollection = collection(db, 'workflows');
+      const workflowSnapshot = await getDocs(workflowsCollection);
+      const workflowList = workflowSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workflow));
+      setWorkflows(workflowList);
     };
 
-    fetchData();
+    const fetchWebhooks = async () => {
+      const webhooksCollection = collection(db, 'webhooks');
+      const webhookSnapshot = await getDocs(webhooksCollection);
+      const webhookList = webhookSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Webhook));
+      setWebhooks(webhookList);
+    };
+
+    fetchWorkflows();
+    fetchWebhooks();
   }, []);
 
-  return (
-    <div className="flex flex-col h-screen bg-black text-gray-300">
-      <header className="flex justify-between items-center p-4 bg-black text-gray-300 border-b border-gray-800">
-        <div className="flex items-center">
-          <span className="text-xl font-['Montserrat'] font-medium tracking-[0.104em] uppercase">
-            🚀 Rocket Launcher
-          </span>
-        </div>
-        <ThemeToggle />
-      </header>
+  useEffect(() => {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    if (!apiKey) {
+      console.error('OpenAI API key is not set in environment variables');
+    } else {
+      console.log('OpenAI API key is set');
+      setOpenAIKey(apiKey);
+    }
+  }, []);
 
-      <div className="flex flex-1 overflow-hidden">
-        <div className="border-r border-gray-800">
-          <SideMenu navigate={navigate} openNotepad={() => setIsNotepadOpen(true)} />
-        </div>
-        <main className="flex-1 overflow-auto bg-black text-gray-300">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/chat" element={
-              <div className="flex h-full">
-                <div className="flex-1 overflow-hidden flex flex-col">
-                  <ChatContainer
-                    selectedFlowId={selectedFlowId}
-                    setSelectedFlowId={setSelectedFlowId}
-                    workflows={workflows}
-                    webhooks={webhooks}
-                  />
-                </div>
-                <WorkflowDescription
-                  selectedWorkflow={workflows.find(w => w.chatflowId === selectedFlowId)}
+  const openNotepad = () => setIsNotepadOpen(true);
+  const closeNotepad = () => setIsNotepadOpen(false);
+
+  return (
+    <div className="flex h-screen bg-background">
+      <SideMenu navigate={navigate} openNotepad={openNotepad} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/chat" element={
+            <div className="flex h-full">
+              <div className="flex flex-grow">
+                <ChatContainer 
+                  selectedFlowId={selectedFlowId} 
+                  setSelectedFlowId={setSelectedFlowId} 
+                  workflows={workflows} 
+                  webhooks={webhooks} 
+                  openAIKey={openAIKey}
+                />
+                <WorkflowDescription 
+                  selectedWorkflow={workflows.find(w => w.chatflowId === selectedFlowId)} 
                 />
               </div>
-            } />
-            <Route path="/manage" element={<WorkflowManager workflows={workflows} setWorkflows={setWorkflows} />} />
-            <Route path="/webhooks" element={<WebhookManager webhooks={webhooks} setWebhooks={setWebhooks} />} />
-            <Route path="/documents" element={<DocumentManager />} />
-          </Routes>
-        </main>
-        <NotepadDrawer isOpen={isNotepadOpen} onClose={() => setIsNotepadOpen(false)} />
+            </div>
+          } />
+          <Route path="/workflows" element={<WorkflowManager workflows={workflows} setWorkflows={setWorkflows} />} />
+          <Route path="/webhooks" element={<WebhookManager webhooks={webhooks} setWebhooks={setWebhooks} />} />
+          <Route path="/documents" element={<DocumentManager />} />
+        </Routes>
       </div>
+      <NotepadDrawer isOpen={isNotepadOpen} onClose={closeNotepad} />
+      <ThemeToggle />
     </div>
   );
 }
@@ -87,11 +95,11 @@ function AppContent() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <TooltipProvider>
-          <BrowserRouter>
+          <Router>
             <AppContent />
-          </BrowserRouter>
+          </Router>
           <Toaster />
         </TooltipProvider>
       </ThemeProvider>

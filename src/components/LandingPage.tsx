@@ -2,7 +2,6 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import DotPattern from "@/components/magicui/dot-pattern";
 import ShinyButton from "@/components/magicui/shiny-button"; // Line 4: Import ShinyButton
-import FeaturedWorkflows from "@/components/FeaturedWorkflows";
 import Marquee from "@/components/magicui/marquee"; // Line 5: Import Marquee
 
 const LandingPage: React.FC = () => {

@@ -64,11 +64,13 @@ const DocumentManager: React.FC = () => {
     setDocuments(docs);
   };
 
-  const companies = Array.from(new Set(documents.map(doc => doc.company)));
+  // Remove or use the 'companies' variable
+  // const companies = Array.from(new Set(documents.map(doc => doc.company)));
 
-  const filteredDocuments = selectedCompany
-    ? documents.filter(doc => doc.company === selectedCompany)
-    : documents;
+  // Remove or use the 'filteredDocuments' variable
+  // const filteredDocuments = selectedCompany
+  //   ? documents.filter(doc => doc.company === selectedCompany)
+  //   : documents;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -78,6 +80,10 @@ const DocumentManager: React.FC = () => {
   const addDocument = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Remove or use the 'docRef' variable
+      // const docRef = await addDoc(collection(db, "markdownFiles"), newDocument);
+      // If you need to keep this for future use, you can ignore the error:
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const docRef = await addDoc(collection(db, "markdownFiles"), newDocument);
       setNewDocument({ title: '', docType: '', content: '', company: '' });
       fetchDocuments();

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@radix-ui/react-tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
@@ -20,7 +20,7 @@ interface NotepadDrawerProps {
 }
 
 const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState('view');
+  const [activeTab, setActiveTab] = useState('edit');
   const [markdown, setMarkdown] = useState('');
   const [company, setCompany] = useState('');
   const [docType, setDocType] = useState('');
@@ -159,11 +159,26 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
     toast.success("Notepad cleared!");
   };
 
+  // Add this custom CSS for the MDEditor
+  const customMDEditorStyles = `
+    .w-md-editor-text-pre > code,
+    .w-md-editor-text-input {
+      font-size: 16px !important;
+      line-height: 1.5 !important;
+    }
+    .w-md-editor-text-pre > code .token.title.important {
+      color: #a0aec0 !important; /* Light gray color for ## headings */
+    }
+  `;
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 w-1/2 min-w-[50vw] bg-background shadow-lg z-50 flex flex-col">
-      <div className="flex justify-between items-center p-4 border-b">
+    <div className="fixed inset-y-0 right-0 w-1/4 bg-background text-foreground shadow-lg z-50 flex flex-col border-l border-border">
+      {/* Add the custom styles */}
+      <style>{customMDEditorStyles}</style>
+      
+      <div className="flex justify-between items-center p-4 border-b border-border">
         <h2 className="text-lg font-semibold">Notepad</h2>
         <div className="flex space-x-2">
           <Button variant="ghost" size="icon" onClick={handleClear}>
@@ -176,14 +191,14 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="flex justify-start p-2 bg-muted">
-          <TabsTrigger value="view" className="px-4 py-2 rounded-md">View</TabsTrigger>
-          <TabsTrigger value="edit" className="px-4 py-2 rounded-md">Edit</TabsTrigger>
+        <TabsList className="flex justify-start p-2 bg-card">
+          <TabsTrigger value="edit">Edit</TabsTrigger>
+          <TabsTrigger value="view">View</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="view" className="flex-1 overflow-auto p-4">
+        <TabsContent value="view" className="flex-1 overflow-auto p-4 bg-card">
           <ReactMarkdown
-            className="markdown-body"
+            className="markdown-body prose dark:prose-invert max-w-none"
             rehypePlugins={[rehypeRaw, rehypeParse]}
             remarkPlugins={[remarkGfm]}
           >
@@ -192,71 +207,71 @@ const NotepadDrawer: React.FC<NotepadDrawerProps> = ({ isOpen, onClose }) => {
         </TabsContent>
 
         <TabsContent value="edit" className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex flex-col space-y-2 p-2">
-            {isAddingNewCompany ? (
-              <div className="flex items-center space-x-2">
-                <Input
-                  placeholder="New Company Name"
-                  value={newCompany}
-                  onChange={(e) => setNewCompany(e.target.value)}
-                  className="flex-grow"
-                />
-                <Button onClick={handleAddNewCompany}>Add</Button>
-                <Button variant="outline" onClick={() => setIsAddingNewCompany(false)}>Cancel</Button>
-              </div>
-            ) : (
-              <Select value={company} onValueChange={handleCompanyChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Company" />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                  <SelectItem value="new">Add New Company</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-            {isAddingNewDocType ? (
-              <div className="flex items-center space-x-2">
-                <Input
-                  placeholder="New Document Type"
-                  value={newDocType}
-                  onChange={(e) => setNewDocType(e.target.value)}
-                  className="flex-grow"
-                />
-                <Button onClick={handleAddNewDocType}>Add</Button>
-                <Button variant="outline" onClick={() => setIsAddingNewDocType(false)}>Cancel</Button>
-              </div>
-            ) : (
-              <Select value={docType} onValueChange={handleDocTypeChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Document Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {docTypes.map((type) => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                  <SelectItem value="new">Add New Document Type</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
+          <div className="flex flex-col space-y-2 p-2 bg-card">
+            <Select value={company} onValueChange={handleCompanyChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Company" />
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+                <SelectItem value="new">Add New Company</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={docType} onValueChange={handleDocTypeChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Document Type" />
+              </SelectTrigger>
+              <SelectContent>
+                {docTypes.map((type) => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+                <SelectItem value="new">Add New Document Type</SelectItem>
+              </SelectContent>
+            </Select>
             <Input
               placeholder="Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
-            <div className="flex justify-end space-x-2">
-              <Button onClick={handleStoreInDocs}>Store in Docs</Button>
-              <Button onClick={handleSave}>Save</Button>
+            <div className="flex justify-between space-x-2">
+              <Button onClick={() => document.getElementById('file-upload')?.click()}>
+                <Plus className="mr-2 h-4 w-4" />
+                Load File
+              </Button>
+              <input
+                id="file-upload"
+                type="file"
+                accept=".md,.txt"
+                onChange={handleLoad}
+                style={{ display: 'none' }}
+              />
+              <div>
+                <Button onClick={handleStoreInDocs} className="mr-2">Store in Docs</Button>
+                <Button onClick={handleSave}>Save</Button>
+              </div>
             </div>
           </div>
-          <div className="flex-grow overflow-auto">
+          <div className="flex-grow overflow-auto bg-background">
             <MDEditor
               value={markdown}
               onChange={(value) => setMarkdown(value || '')}
               height="100%"
               preview="edit"
+              className="bg-background text-foreground border-none"
+              textareaProps={{
+                style: {
+                  backgroundColor: 'var(--background)',
+                  color: 'var(--foreground)',
+                }
+              }}
+              previewOptions={{
+                style: {
+                  backgroundColor: 'var(--background)',
+                  color: 'var(--foreground)',
+                }
+              }}
             />
           </div>
         </TabsContent>
