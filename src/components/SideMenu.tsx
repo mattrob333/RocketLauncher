@@ -1,6 +1,7 @@
 // No need to import React in modern versions of React with TypeScript
 import { Button } from "@/components/ui/button"
-import { MessageSquare, Settings, Globe, Home, Notebook, FileEdit, FileText } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Rocket, Bot, Workflow, Globe, FileEdit, FileText } from 'lucide-react'
 
 interface SideMenuProps {
   navigate: (path: string) => void;
@@ -9,70 +10,36 @@ interface SideMenuProps {
 
 export function SideMenu({ navigate, openNotepad }: SideMenuProps) {
   return (
-    <div className="w-16 bg-black p-4 flex flex-col items-center space-y-6">
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={() => navigate('/')}
-        className="text-gray-400 hover:text-gray-200 hover:bg-gray-800"
-      >
-        <Home className="h-6 w-6" />
-        <span className="sr-only">Home</span>
-      </Button>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={() => navigate('/chat')}
-        className="text-gray-400 hover:text-gray-200 hover:bg-gray-800"
-      >
-        <MessageSquare className="h-6 w-6" />
-        <span className="sr-only">Chat</span>
-      </Button>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={() => navigate('/manage')}
-        className="text-gray-400 hover:text-gray-200 hover:bg-gray-800"
-      >
-        <Settings className="h-6 w-6" />
-        <span className="sr-only">Manage</span>
-      </Button>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={() => navigate('/webhooks')}
-        className="text-gray-400 hover:text-gray-200 hover:bg-gray-800"
-      >
-        <Globe className="h-6 w-6" />
-        <span className="sr-only">Webhooks</span>
-      </Button>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={openNotepad}
-        className="text-gray-400 hover:text-gray-200 hover:bg-gray-800"
-      >
-        <Notebook className="h-6 w-6" />
-        <span className="sr-only">Open Notepad</span>
-      </Button>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={() => navigate('/markdown')}
-        className="text-gray-400 hover:text-gray-200 hover:bg-gray-800"
-      >
-        <FileEdit className="h-6 w-6" />
-        <span className="sr-only">Markdown Editor</span>
-      </Button>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={() => navigate('/documents')}
-        className="text-gray-400 hover:text-gray-200 hover:bg-gray-800"
-      >
-        <FileText className="h-6 w-6" />
-        <span className="sr-only">Documents</span>
-      </Button>
-    </div>
+    <TooltipProvider>
+      <div className="w-16 h-screen bg-background border-r border-border flex flex-col items-center py-4 space-y-4">
+        <SidebarIcon icon={<Rocket className="h-6 w-6" />} label="Home" onClick={() => navigate('/')} />
+        <SidebarIcon icon={<Bot className="h-6 w-6" />} label="Chat" onClick={() => navigate('/chat')} />
+        <SidebarIcon icon={<Workflow className="h-6 w-6" />} label="Workflow Manager" onClick={() => navigate('/manage')} />
+        <SidebarIcon icon={<Globe className="h-6 w-6" />} label="Webhooks" onClick={() => navigate('/webhooks')} />
+        <SidebarIcon icon={<FileEdit className="h-6 w-6" />} label="Text Editor" onClick={openNotepad} />
+        <SidebarIcon icon={<FileText className="h-6 w-6" />} label="Documents" onClick={() => navigate('/documents')} />
+      </div>
+    </TooltipProvider>
+  )
+}
+
+function SidebarIcon({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onClick}
+          className="text-muted-foreground hover:text-foreground hover:bg-accent"
+        >
+          {icon}
+          <span className="sr-only">{label}</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="right">
+        <p>{label}</p>
+      </TooltipContent>
+    </Tooltip>
   )
 }

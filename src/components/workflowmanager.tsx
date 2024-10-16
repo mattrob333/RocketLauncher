@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Check, ChevronDown, Pencil, Trash2, } from "lucide-react";
-import { collection, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from '@/firebase.js';
 import { Workflow } from '@/types';
+import { toast } from "sonner";
 
 interface WorkflowManagerProps {
   workflows: Workflow[];
@@ -15,8 +16,6 @@ interface WorkflowManagerProps {
 }
 
 const WorkflowManager: React.FC<WorkflowManagerProps> = ({ workflows, setWorkflows }) => {
-  console.log("WorkflowManager rendering with workflows:", workflows);
-
   const [newWorkflow, setNewWorkflow] = useState<Omit<Workflow, 'id'>>({
     title: '',
     description: '',
@@ -31,6 +30,21 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({ workflows, setWorkflo
 
   const [editingWorkflow, setEditingWorkflow] = useState<string | null>(null);
   const [editedWorkflow, setEditedWorkflow] = useState<Workflow | null>(null);
+
+  useEffect(() => {
+    fetchWorkflows();
+  }, []);
+
+  const fetchWorkflows = async () => {
+    try {
+      const workflowsCollection = collection(db, 'workflows');
+      const workflowSnapshot = await getDocs(workflowsCollection);
+      const workflowList = workflowSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workflow));
+      setWorkflows(workflowList);
+    } catch (error) {
+      console.error("Error fetching workflows:", error);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, field: keyof Omit<Workflow, 'id'>) => {
     const { value } = e.target;
@@ -62,7 +76,7 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({ workflows, setWorkflo
   const addWorkflow = async () => {
     try {
       if (!newWorkflow.chatflowId) {
-        console.error("chatflowId is required");
+        toast.error("chatflowId is required");
         return;
       }
       const workflowToAdd = {
@@ -70,7 +84,7 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({ workflows, setWorkflo
         expectedInput: Array.isArray(newWorkflow.expectedInput) ? newWorkflow.expectedInput : [newWorkflow.expectedInput]
       };
       const docRef = await addDoc(collection(db, "workflows"), workflowToAdd);
-      console.log("New workflow added with ID:", docRef.id, "Data:", workflowToAdd);
+      console.log("New workflow added with ID:", docRef.id);
       setWorkflows(prevWorkflows => [...prevWorkflows, { id: docRef.id, ...workflowToAdd }]);
       setNewWorkflow({
         title: '',
@@ -83,8 +97,10 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({ workflows, setWorkflo
         steps: [],
         tags: []
       });
+      toast.success("Workflow added successfully");
     } catch (e) {
       console.error("Error adding document:", e);
+      toast.error("Failed to add workflow");
     }
   };
 
@@ -92,8 +108,10 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({ workflows, setWorkflo
     try {
       await deleteDoc(doc(db, "workflows", id));
       setWorkflows(workflows.filter(workflow => workflow.id !== id));
+      toast.success("Workflow deleted successfully");
     } catch (e) {
       console.error("Error deleting document:", e);
+      toast.error("Failed to delete workflow");
     }
   };
 

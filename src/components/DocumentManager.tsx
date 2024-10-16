@@ -6,15 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Copy, Trash2, Folder, Plus, X } from "lucide-react";
+import { Copy, Trash2, Folder, File, ChevronRight, ChevronDown, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Dialog, DialogContent, DialogTrigger } from "@radix-ui/react-dialog";
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
-import rehypeParse from 'rehype-parse';
-import '../styles/markdown-styles.css';
 import '@/styles/markdown-styles.css';
 
 interface Document {
@@ -25,37 +21,32 @@ interface Document {
   content: string;
 }
 
-interface CompanyDocuments {
-  [company: string]: Document[];
+interface FileTreeNode {
+  name: string;
+  type: 'company' | 'docType' | 'document';
+  children?: FileTreeNode[];
+  document?: Document;
 }
 
 const DocumentManager: React.FC = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [groupedDocuments, setGroupedDocuments] = useState<CompanyDocuments>({});
-  const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
-  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [fileTree, setFileTree] = useState<FileTreeNode[]>([]);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [newDocument, setNewDocument] = useState<Omit<Document, 'id'>>({
-    title: '',
-    docType: '',
-    content: '',
     company: '',
+    docType: '',
+    title: '',
+    content: '',
   });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
 
   useEffect(() => {
     fetchDocuments();
   }, []);
 
   useEffect(() => {
-    const grouped = documents.reduce((acc, doc) => {
-      if (!acc[doc.company]) {
-        acc[doc.company] = [];
-      }
-      acc[doc.company].push(doc);
-      return acc;
-    }, {} as CompanyDocuments);
-    setGroupedDocuments(grouped);
+    buildFileTree();
   }, [documents]);
 
   const fetchDocuments = async () => {
@@ -64,13 +55,29 @@ const DocumentManager: React.FC = () => {
     setDocuments(docs);
   };
 
-  // Remove or use the 'companies' variable
-  // const companies = Array.from(new Set(documents.map(doc => doc.company)));
-
-  // Remove or use the 'filteredDocuments' variable
-  // const filteredDocuments = selectedCompany
-  //   ? documents.filter(doc => doc.company === selectedCompany)
-  //   : documents;
+  const buildFileTree = () => {
+    const tree: FileTreeNode[] = [];
+    documents.forEach(doc => {
+      let companyNode = tree.find(node => node.name === doc.company);
+      if (!companyNode) {
+        companyNode = { name: doc.company, type: 'company', children: [] };
+        tree.push(companyNode);
+      }
+      
+      let docTypeNode = companyNode.children?.find(node => node.name === doc.docType);
+      if (!docTypeNode) {
+        docTypeNode = { name: doc.docType, type: 'docType', children: [] };
+        companyNode.children?.push(docTypeNode);
+      }
+      
+      docTypeNode.children?.push({
+        name: doc.title,
+        type: 'document',
+        document: doc
+      });
+    });
+    setFileTree(tree);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -80,16 +87,11 @@ const DocumentManager: React.FC = () => {
   const addDocument = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Remove or use the 'docRef' variable
-      // const docRef = await addDoc(collection(db, "markdownFiles"), newDocument);
-      // If you need to keep this for future use, you can ignore the error:
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const docRef = await addDoc(collection(db, "markdownFiles"), newDocument);
-      setNewDocument({ title: '', docType: '', content: '', company: '' });
+      console.log("Document written with ID: ", docRef.id);
+      setNewDocument({ company: '', docType: '', title: '', content: '' });
       fetchDocuments();
       setIsAddDialogOpen(false);
-      setSelectedCompany(newDocument.company);
-      setExpandedCompanies(prev => new Set(prev).add(newDocument.company));
       toast.success("Document added successfully!");
     } catch (error) {
       console.error("Error adding document: ", error);
@@ -101,6 +103,7 @@ const DocumentManager: React.FC = () => {
     try {
       await deleteDoc(doc(db, "markdownFiles", id));
       fetchDocuments();
+      setSelectedDocument(null);
       toast.success("Document deleted successfully!");
     } catch (error) {
       console.error("Error deleting document: ", error);
@@ -116,25 +119,44 @@ const DocumentManager: React.FC = () => {
     });
   };
 
-  const toggleCompanyExpansion = (company: string) => {
-    setExpandedCompanies(prev => {
+  const toggleNodeExpansion = (nodePath: string) => {
+    setExpandedNodes(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(company)) {
-        newSet.delete(company);
+      if (newSet.has(nodePath)) {
+        newSet.delete(nodePath);
       } else {
-        newSet.add(company);
+        newSet.add(nodePath);
       }
       return newSet;
     });
   };
 
-  const handleCompanyClick = (company: string) => {
-    toggleCompanyExpansion(company);
-    setSelectedCompany(prev => prev === company ? null : company);
-  };
-
-  const handleDocumentClick = (doc: Document) => {
-    setSelectedDocument(doc);
+  const renderFileTree = (nodes: FileTreeNode[], path: string = '') => {
+    return nodes.map((node, index) => {
+      const currentPath = `${path}/${node.name}`;
+      const isExpanded = expandedNodes.has(currentPath);
+      
+      return (
+        <div key={currentPath} className="ml-4">
+          <div 
+            className="flex items-center cursor-pointer hover:bg-gray-100 p-1 rounded"
+            onClick={() => node.type !== 'document' && toggleNodeExpansion(currentPath)}
+          >
+            {node.type !== 'document' && (isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />)}
+            {node.type === 'company' && <Folder size={16} className="mr-2 text-blue-500" />}
+            {node.type === 'docType' && <Folder size={16} className="mr-2 text-green-500" />}
+            {node.type === 'document' && <File size={16} className="mr-2 text-gray-500" />}
+            <span 
+              className="ml-2"
+              onClick={() => node.type === 'document' && node.document && setSelectedDocument(node.document)}
+            >
+              {node.name}
+            </span>
+          </div>
+          {node.children && isExpanded && renderFileTree(node.children, currentPath)}
+        </div>
+      );
+    });
   };
 
   return (
@@ -143,136 +165,44 @@ const DocumentManager: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Companies</CardTitle>
+            <CardTitle className="flex justify-between items-center">
+              File Tree
+              <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Document
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {Object.entries(groupedDocuments).map(([company, docs]) => (
-                <div key={company}>
-                  <Button
-                    variant={selectedCompany === company ? "secondary" : "ghost"}
-                    className="w-full justify-start"
-                    onClick={() => handleCompanyClick(company)}
-                  >
-                    {expandedCompanies.has(company) ? (
-                      <ChevronDown className="mr-2 h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="mr-2 h-4 w-4" />
-                    )}
-                    {company} ({docs.length})
-                  </Button>
-                  {expandedCompanies.has(company) && (
-                    <div className="ml-4 space-y-1">
-                      {docs.map((doc) => (
-                        <Button
-                          key={doc.id}
-                          variant="ghost"
-                          size="sm"
-                          className="w-full justify-start"
-                          onClick={() => handleDocumentClick(doc)}
-                        >
-                          <Folder className="mr-2 h-3 w-3" />
-                          {doc.title}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+              {renderFileTree(fileTree)}
             </div>
           </CardContent>
         </Card>
         <div className="lg:col-span-3">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">
-              {selectedDocument ? selectedDocument.title : 'Document Viewer'}
-            </h2>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Document
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <form onSubmit={addDocument} className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">Title</Label>
-                    <Input
-                      id="title"
-                      name="title"
-                      value={newDocument.title}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="company">Company</Label>
-                    <Input
-                      id="company"
-                      name="company"
-                      value={newDocument.company}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="docType">Document Type</Label>
-                    <Input
-                      id="docType"
-                      name="docType"
-                      value={newDocument.docType}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="content">Content</Label>
-                    <Textarea
-                      id="content"
-                      name="content"
-                      value={newDocument.content}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <Button type="submit">Add Document</Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
           {selectedDocument ? (
-            <Card className="overflow-hidden">
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between bg-muted">
                 <CardTitle>{selectedDocument.title}</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setSelectedDocument(null)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="bg-muted p-4">
-                  <p className="text-sm text-muted-foreground">Company: {selectedDocument.company}</p>
-                  <p className="text-sm text-muted-foreground">Type: {selectedDocument.docType}</p>
-                </div>
-                <div className="p-6 max-h-[calc(100vh-300px)] overflow-y-auto bg-black text-white">
-                  <div className="markdown-body prose prose-invert max-w-none">
-                    <ReactMarkdown
-                      rehypePlugins={[rehypeRaw, rehypeParse]}
-                      remarkPlugins={[remarkGfm]}
-                    >
-                      {selectedDocument.content}
-                    </ReactMarkdown>
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-2 p-4 bg-muted">
+                <div className="space-x-2">
                   <Button onClick={() => copyToClipboard(selectedDocument.content)}>
                     <Copy className="mr-2 h-4 w-4" />
                     Copy Content
                   </Button>
                   <Button onClick={() => deleteDocument(selectedDocument.id)} variant="destructive">
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="mr-2 h-4 w-4" />
                     Delete
                   </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="prose prose-sm mt-4">
+                  <ReactMarkdown
+                    rehypePlugins={[rehypeRaw]}
+                    remarkPlugins={[remarkGfm]}
+                  >
+                    {selectedDocument.content}
+                  </ReactMarkdown>
                 </div>
               </CardContent>
             </Card>
@@ -283,6 +213,63 @@ const DocumentManager: React.FC = () => {
           )}
         </div>
       </div>
+      {isAddDialogOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Add New Document</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={addDocument} className="space-y-4">
+                <div>
+                  <Label htmlFor="company">Company</Label>
+                  <Input
+                    id="company"
+                    name="company"
+                    value={newDocument.company}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="docType">Document Type</Label>
+                  <Input
+                    id="docType"
+                    name="docType"
+                    value={newDocument.docType}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    value={newDocument.title}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="content">Content</Label>
+                  <Textarea
+                    id="content"
+                    name="content"
+                    value={newDocument.content}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+                  <Button type="submit">Add Document</Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

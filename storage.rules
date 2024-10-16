@@ -1,0 +1,20 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow read access to all users
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+    
+    // Allow write access only to authenticated users
+    match /avatars/{fileName} {
+      allow write: if request.auth != null;
+    }
+    
+    // Deny write access to all other locations
+    match /{allPaths=**} {
+      allow write: if false;
+    }
+  }
+}

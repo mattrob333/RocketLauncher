@@ -1,245 +1,186 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { collection, addDoc, onSnapshot, query, orderBy, getDocs, deleteDoc } from "firebase/firestore";
-import { db } from '@/firebase.js';
+import React, { useState, useEffect } from 'react';
+import { Workflow, Webhook, Expert } from '@/types';
+import { ChatInputWithDrawersComponent } from "@/components/chat-input-with-drawers"
+import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Workflow, Webhook } from '@/types';
-import { Mic, Paperclip, Copy, Trash, Loader, Check, Send } from "lucide-react";
-import ReactMarkdown from 'react-markdown';
-import '@/styles/markdown.css';
-import { Switch } from "@/components/ui/switch";
-import { AIAssistant } from './AIAssistant';
-import { AgentSelector } from './AgentSelector';
+import { collection, getDocs } from "firebase/firestore";
+import { db } from '@/firebase';
+import { toast } from "sonner";
+import { AIAssistant } from '@/components/AIAssistant';
 
-const API_BASE_URL = 'https://flowise-jc8z.onrender.com/api/v1/prediction';
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 interface ChatContainerProps {
   selectedFlowId: string;
-  setSelectedFlowId: (id: string) => void;
-  workflows: Workflow[];
+  setSelectedFlowId: React.Dispatch<React.SetStateAction<string>>;
   webhooks: Webhook[];
-  className?: string;
   openAIKey: string;
+  className?: string;
 }
 
-export function ChatContainer({ selectedFlowId, setSelectedFlowId, workflows, webhooks, className, openAIKey }: ChatContainerProps) {
-  const [messages, setMessages] = useState<{ id: string; content: string; timestamp: Date; sender: string }[]>([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const [useAssistant, setUseAssistant] = useState(false);
-  const [selectedAssistantId, setSelectedAssistantId] = useState<string | null>(null);
+const ChatContainer: React.FC<ChatContainerProps> = ({ 
+  selectedFlowId, 
+  setSelectedFlowId, 
+  webhooks, 
+  openAIKey,
+  className 
+}) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const [selectedAssistant, setSelectedAssistant] = useState<Expert | null>(null);
   const [aiAssistant, setAiAssistant] = useState<AIAssistant | null>(null);
 
   useEffect(() => {
-    if (selectedFlowId) {
-      const q = query(collection(db, `chats/${selectedFlowId}/messages`), orderBy('timestamp'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as { id: string; content: string; timestamp: Date; sender: string })));
-      });
-      return () => unsubscribe();
-    }
-  }, [selectedFlowId]);
+    fetchWorkflows();
+  }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  useEffect(() => {
-    if (useAssistant && selectedAssistantId) {
-      const conversationHistory = messages.map(msg => `${msg.sender}: ${msg.content}`);
+    if (selectedAssistant) {
       const newAiAssistant = new AIAssistant({
-        agent: { id: selectedAssistantId, name: '', role: '', description: '', avatar: '', assistantId: selectedAssistantId },
+        agent: selectedAssistant,
         onMessageReceived: (message) => {
-          addMessage(message, 'assistant');
+          setMessages(prev => [...prev, { role: 'assistant', content: message }]);
         },
-        initialConversation: conversationHistory
+        initialConversation: messages.map(m => `${m.role}: ${m.content}`)
       });
       setAiAssistant(newAiAssistant);
-    } else {
-      setAiAssistant(null);
     }
-  }, [useAssistant, selectedAssistantId, messages]);
+  }, [selectedAssistant]);
 
-  const addMessage = (content: string, sender: string) => {
-    const newMessage = { id: Date.now().toString(), content, timestamp: new Date(), sender };
-    setMessages(prev => [...prev, newMessage]);
-    if (aiAssistant) {
-      aiAssistant.addToConversation(content, sender as 'user' | 'assistant' | 'workflow');
-    }
-  };
-
-  const executeWorkflow = async (input: string) => {
+  const fetchWorkflows = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/${selectedFlowId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: input }),
-      });
-      if (!response.ok) throw new Error('Workflow execution failed');
-      const data = await response.json();
-      return data.text;
+      const workflowsCollection = collection(db, 'workflows');
+      const workflowSnapshot = await getDocs(workflowsCollection);
+      const workflowList = workflowSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workflow));
+      setWorkflows(workflowList);
     } catch (error) {
-      console.error("Error executing workflow:", error);
-      throw error;
+      console.error("Error fetching workflows:", error);
+      toast.error("Failed to fetch workflows");
     }
   };
 
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (input.trim() && (selectedFlowId || (useAssistant && selectedAssistantId))) {
-      addMessage(input, 'user');
-      setInput('');
-      setLoading(true);
+  const callFlowiseAPI = async (chatflowId: string, message: string): Promise<string> => {
+    const apiUrl = `https://flowise-jc8z.onrender.com/api/v1/prediction/${chatflowId}`;
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ question: message })
+    });
 
+    if (!response.ok) {
+      throw new Error(`Flowise API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.text || "No response from Flowise API";
+  }
+
+  const handleSendMessage = async (message: string, chatflowId?: string, assistantId?: string) => {
+    if (message.trim()) {
+      setMessages(prevMessages => [...prevMessages, { role: 'user', content: message }]);
+      setIsLoading(true);
+      
       try {
-        let response;
-        if (useAssistant && aiAssistant) {
-          response = await aiAssistant.getResponse(input);
+        let response: string;
+        if (assistantId && aiAssistant) {
+          response = await aiAssistant.getResponse(message);
+        } else if (chatflowId) {
+          response = await callFlowiseAPI(chatflowId, message);
         } else {
-          response = await executeWorkflow(input);
+          throw new Error("No assistant or workflow selected");
         }
-        addMessage(response, 'assistant');
+        setMessages(prevMessages => [...prevMessages, { role: 'assistant', content: response }]);
       } catch (error) {
-        console.error("Error in sendMessage:", error);
-        addMessage("Error: Unable to get a response. Please try again.", 'system');
+        console.error("Error getting AI response:", error);
+        toast.error("Failed to get AI response");
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     }
-  };
+  }
 
-  const clearChat = async () => {
-    if (selectedFlowId) {
-      const chatRef = collection(db, `chats/${selectedFlowId}/messages`);
-      const snapshot = await getDocs(chatRef);
-      snapshot.docs.forEach(async (doc) => {
-        await deleteDoc(doc.ref);
-      });
-      setMessages([]);
-    }
-  };
+  const handleSelectAssistant = (assistant: Expert) => {
+    setSelectedAssistant(assistant);
+    console.log("Selected assistant:", assistant);
+  }
 
-  const copyToClipboard = (text: string, messageId: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedMessageId(messageId);
-      setTimeout(() => setCopiedMessageId(null), 2000);
-    }).catch(err => {
-      console.error('Failed to copy: ', err);
-    });
-  };
+  const handleSelectWebhook = (webhook: Webhook) => {
+    console.log("Selected webhook:", webhook);
+    // Implement webhook logic here
+  }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage(e);
-    }
-  };
+  const handleClearChat = () => {
+    setMessages([]);
+    toast.success("Chat cleared");
+  }
 
   return (
-    <div className={`flex flex-col h-full bg-background text-foreground w-3/4 ${className}`}>
-      {/* Workflow selector, clear chat button, and Assistant toggle */}
-      <div className="p-4 flex justify-between items-center bg-background border-b border-border">
-        <div className="flex items-center space-x-4">
-          {!useAssistant && (
-            <Select onValueChange={setSelectedFlowId} value={selectedFlowId || undefined}>
-              <SelectTrigger className="w-[400px] bg-secondary text-secondary-foreground border-input">
-                <SelectValue placeholder="Select a workflow" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover text-popover-foreground border-border">
-                {workflows.map((workflow) => (
-                  workflow.chatflowId && (
-                    <SelectItem key={workflow.id} value={workflow.chatflowId} className="hover:bg-accent hover:text-accent-foreground">
-                      {workflow.title}
-                    </SelectItem>
-                  )
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          {useAssistant && (
-            <AgentSelector
-              selectedAgentId={selectedAssistantId}
-              onAgentSelect={setSelectedAssistantId}
-            />
-          )}
-          <div className="flex items-center space-x-2">
-            <span>Use Assistant</span>
-            <Switch
-              checked={useAssistant}
-              onCheckedChange={setUseAssistant}
-            />
-          </div>
-        </div>
-        <Button onClick={clearChat} variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-          <Trash className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="flex flex-col space-y-4 px-4 py-2">
-          {messages.map((msg, index) => (
-            <div key={msg.id} className={`flex flex-col ${index > 0 && messages[index - 1].sender !== msg.sender ? 'mt-4' : ''}`}>
-              <div className={`max-w-[80%] ${msg.sender === 'user' ? 'ml-auto' : 'mr-auto'}`}>
-                <div className={`p-3 flex justify-between items-start ${
-                  msg.sender === 'user' 
-                    ? 'bg-secondary text-secondary-foreground rounded-lg' 
-                    : 'text-foreground'
-                }`}>
-                  <div className="markdown-content">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  </div>
-                  {msg.sender !== 'user' && (
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => copyToClipboard(msg.content, msg.id)}
-                      className="ml-2 flex-shrink-0 text-muted-foreground hover:text-foreground"
-                    >
-                      {copiedMessageId === msg.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-          {loading && (
-            <div className="flex justify-center items-center my-4">
-              <Loader className="animate-spin h-6 w-6 text-muted-foreground" />
-            </div>
-          )}
-          <div ref={messagesEndRef} />
+    <div className={`flex flex-col h-full ${className}`}>
+      {/* Header Bar */}
+      <div className="bg-background border-b border-border p-4 flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Chat</h1>
+        <div className="flex items-center space-x-2">
+          <Select value={selectedFlowId} onValueChange={setSelectedFlowId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select a workflow" />
+            </SelectTrigger>
+            <SelectContent>
+              {workflows.map((workflow) => (
+                <SelectItem key={workflow.id} value={workflow.id}>
+                  {workflow.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={handleClearChat} variant="ghost" size="icon">
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
-      {/* Input area */}
-      <div className="p-4 border-t border-border">
-        <form onSubmit={sendMessage} className="relative">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={useAssistant ? "Ask the assistant..." : "Ask the workflow..."}
-            className="w-full pr-24 bg-input text-foreground resize-none rounded-md"
-            rows={3}
-          />
-          <div className="absolute bottom-2 right-2 flex space-x-2">
-            <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-              <Mic className="h-4 w-4" />
-            </Button>
-            <Button type="submit" variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-              <Send className="h-4 w-4" />
-            </Button>
+      {/* Chat Messages */}
+      <div className="flex-grow overflow-y-auto p-4 space-y-4">
+        {messages.map((message, index) => (
+          <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[70%] p-3 rounded-lg ${
+              message.role === 'user' 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-secondary text-secondary-foreground'
+            }`}>
+              {message.content}
+            </div>
           </div>
-        </form>
+        ))}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-secondary text-secondary-foreground p-3 rounded-lg flex items-center">
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Thinking...
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Chat Input */}
+      <div className="p-4 bg-background border-t border-border">
+        <ChatInputWithDrawersComponent
+          onSendMessage={handleSendMessage}
+          workflows={workflows}
+          webhooks={webhooks}
+          onSelectAssistant={handleSelectAssistant}
+          onSelectWebhook={handleSelectWebhook}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );
 }
+
+export default ChatContainer;

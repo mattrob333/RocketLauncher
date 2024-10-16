@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 // The import statement for Label is correct, but ensure that the module is installed.
 // You can install it using npm or yarn as mentioned in the chat history.
 
@@ -26,6 +28,8 @@ const WebhookManager: React.FC<{ webhooks: Webhook[], setWebhooks: React.Dispatc
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!newWebhook.label) newErrors.label = 'Label is required';
@@ -36,19 +40,23 @@ const WebhookManager: React.FC<{ webhooks: Webhook[], setWebhooks: React.Dispatc
   };
 
   useEffect(() => {
-    const fetchWebhooks = async () => {
-      try {
-        const webhooksCollection = collection(db, 'webhooks');
-        const webhookSnapshot = await getDocs(webhooksCollection);
-        const webhookList = webhookSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Webhook));
-        setWebhooks(webhookList);
-      } catch (error) {
-        console.error('Error fetching webhooks: ', error);
-      }
-    };
-
     fetchWebhooks();
-  }, [setWebhooks]);
+  }, []);
+
+  const fetchWebhooks = async () => {
+    setIsLoading(true);
+    try {
+      const webhooksCollection = collection(db, 'webhooks');
+      const webhookSnapshot = await getDocs(webhooksCollection);
+      const webhookList = webhookSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Webhook));
+      setWebhooks(webhookList);
+    } catch (error) {
+      console.error('Error fetching webhooks: ', error);
+      toast.error("Failed to fetch webhooks");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -164,29 +172,35 @@ const WebhookManager: React.FC<{ webhooks: Webhook[], setWebhooks: React.Dispatc
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {webhooks.map(webhook => (
-          <Card key={webhook.id} className="w-full bg-card text-card-foreground">
-            <CardHeader>
-              <CardTitle>{webhook.label}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                <div>
-                  <strong className="text-muted-foreground">URL:</strong> <div>{webhook.url}</div>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {webhooks.map(webhook => (
+            <Card key={webhook.id} className="w-full bg-card text-card-foreground">
+              <CardHeader>
+                <CardTitle>{webhook.label}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  <div>
+                    <strong className="text-muted-foreground">URL:</strong> <div>{webhook.url}</div>
+                  </div>
+                  <div>
+                    <strong className="text-muted-foreground">Method:</strong> <div>{webhook.method}</div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button onClick={() => startEditing(webhook)} className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/80">Edit</Button>
+                    <Button onClick={() => deleteWebhook(webhook.id)} variant="destructive" className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</Button>
+                  </div>
                 </div>
-                <div>
-                  <strong className="text-muted-foreground">Method:</strong> <div>{webhook.method}</div>
-                </div>
-                <div className="flex space-x-2">
-                  <Button onClick={() => startEditing(webhook)} className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/80">Edit</Button>
-                  <Button onClick={() => deleteWebhook(webhook.id)} variant="destructive" className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

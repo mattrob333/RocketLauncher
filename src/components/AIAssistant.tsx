@@ -75,7 +75,8 @@ export class AIAssistant {
       if (lastAssistantMessage && lastAssistantMessage.content[0].type === 'text') {
         const response = lastAssistantMessage.content[0].text.value;
         this.addToConversation(response, 'assistant');
-        this.onMessageReceived(response);
+        // Remove this line to avoid triggering a new message in the chat
+        // this.onMessageReceived(response);
         return response;
       }
 

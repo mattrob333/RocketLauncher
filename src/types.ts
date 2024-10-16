@@ -1,4 +1,7 @@
-// src/types/index.ts
+export interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 export interface Workflow {
   id: string;
