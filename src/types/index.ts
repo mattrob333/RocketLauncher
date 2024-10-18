@@ -2,15 +2,15 @@
 
 export interface Workflow {
   id: string;
-  title: string;
-  description: string;
-  chatflowId: string;
-  expectedInput: string[];
-  exampleInput: string;
   category: string;
+  chatflowId: string;
+  description: string;
+  exampleInput: string;
+  expectedInput: string[];
   keyObjectives: string[];
   steps: string[];
   tags: string[];
+  title: string;
 }
 
 export interface Webhook {
@@ -20,11 +20,18 @@ export interface Webhook {
   method: string;
 }
 
-export interface Expert {
+export interface Assistants {
   id: string;
+  assistantId: string;
+  avatar: string;
+  department: string;
+  description: string;
   name: string;
   role: string;
-  description: string;
-  avatar: string;
-  assistantId?: string;
+  tools: string;
 }
+
+// Note: We've removed the Assistants interface as it's not being used correctly
+
+
+

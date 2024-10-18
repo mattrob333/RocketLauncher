@@ -1,123 +1,114 @@
-import { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@radix-ui/react-collapsible";
-import { Check, ChevronDown, Pencil, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+"use client"
+
+import React from 'react';
 import { Workflow } from '@/types';
-import NotepadDrawer from "@/components/notepaddrawer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { MessageSquare, FileInput, Tags, ChevronDown, ChevronUp, BarChart2, Check, Info, ListOrdered, FileLineChart } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface WorkflowDescriptionProps {
-  selectedWorkflow?: Workflow;
+  selectedWorkflow: Workflow | null;
   className?: string;
 }
 
 export function WorkflowDescription({ selectedWorkflow, className }: WorkflowDescriptionProps) {
-  if (!selectedWorkflow) return null;
+  const [isExpanded, setIsExpanded] = React.useState(true);
 
-  const [isNotepadOpen, setIsNotepadOpen] = useState(false);
+  const toggleExpand = () => setIsExpanded(!isExpanded);
 
-  const toggleNotepad = () => {
-    setIsNotepadOpen(!isNotepadOpen);
-  };
+  if (!selectedWorkflow) {
+    return <div className={className}>No workflow selected</div>;
+  }
 
   return (
-    <div className={`h-full w-1/4 p-2 border-l border-border overflow-y-auto ${className}`}>
-      {/* Profile Card */}
-      <div className="bg-card shadow-lg mb-2">
-        <div className="p-3">
-          <h2 className="text-base font-semibold text-card-foreground">User Profile</h2>
-          <p className="text-xs text-muted-foreground">Profile details will go here</p>
-        </div>
-      </div>
+    <Card className={`${className} bg-[hsl(20_14.3%_4.1%)] text-[hsl(60_9.1%_97.8%)] border-[hsl(12_6.5%_15.1%)]`}>
+      <CardHeader className="border-b border-[hsl(12_6.5%_15.1%)] p-4">
+        <h2 className="text-xl font-bold">{selectedWorkflow.title}</h2>
+        <Badge variant="secondary" className="bg-[hsl(12_6.5%_15.1%)] text-[hsl(60_9.1%_97.8%)]">{selectedWorkflow.category}</Badge>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+          <CollapsibleTrigger className="flex justify-between items-center w-full p-4 hover:bg-[hsl(12_6.5%_15.1%)]">
+            <span className="font-semibold">Overview</span>
+            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="p-4 space-y-4">
+              <p className="pl-4">{selectedWorkflow.description}</p>
+              <div>
+                <strong className="flex items-center gap-2 mb-2"><BarChart2 size={16} />Key Objectives:</strong>
+                <ul className="space-y-1 pl-8">
+                  {selectedWorkflow.keyObjectives.map((objective, index) => (
+                    <li key={index} className="flex items-center gap-2">
+                      <Check size={16} className="text-[hsl(220_70%_50%)]" />
+                      <span>{objective}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+        <Collapsible>
+          <CollapsibleTrigger className="flex justify-between items-center w-full p-4 hover:bg-[hsl(12_6.5%_15.1%)]">
+            <span className="font-semibold flex items-center gap-2">
+              <ListOrdered size={16} />
+              Workflow Steps
+            </span>
+            <ChevronDown size={16} />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="p-4">
+              <ol className="list-decimal list-inside space-y-1 pl-4">
+                {selectedWorkflow.steps.map((step, index) => (
+                  <li key={index}>{step}</li>
+                ))}
+              </ol>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+        <Collapsible>
+          <CollapsibleTrigger className="flex justify-between items-center w-full p-4 hover:bg-[hsl(12_6.5%_15.1%)]">
+            <span className="font-semibold flex items-center gap-2">
+              <Info size={16} />
+              Technical Details
+            </span>
+            <ChevronDown size={16} />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="p-4 space-y-4">
+              <p><strong>Chatflow ID:</strong> {selectedWorkflow.chatflowId}</p>
 
-      {/* Workflow Description */}
-      <div className="flex-grow overflow-y-auto">
-        <Card>
-          <CardContent className="p-3">
-            <div className="flex items-start justify-between">
-              <div className="flex-grow pr-2">
-                <h3 className="text-lg font-bold text-primary">{selectedWorkflow.title}</h3>
-                <div className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground inline-block mt-1">
-                  {selectedWorkflow.category}
+              <div>
+                <strong className="flex items-center gap-2"><MessageSquare size={16} />Expected Input:</strong>
+                <p className="pl-6 mt-1">{selectedWorkflow.expectedInput}</p>
+              </div>
+
+              <div>
+                <strong className="flex items-center gap-2"><FileInput size={16} />Example Input:</strong>
+                <p className="pl-6 mt-1">{selectedWorkflow.exampleInput}</p>
+              </div>
+
+              <div>
+                <strong className="flex items-center gap-2"><Tags size={16} />Tags:</strong>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedWorkflow.tags.map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="bg-[hsl(280_65%_60%)] text-[hsl(60_9.1%_97.8%)]">{tag}</Badge>
+                  ))}
                 </div>
               </div>
             </div>
-            <ul className="mt-2 space-y-1 text-xs text-foreground">
-              {Array.isArray(selectedWorkflow.keyObjectives) && selectedWorkflow.keyObjectives.map((objective, index) => (
-                <li key={index} className="flex items-start">
-                  <Check className="mr-1 h-3 w-3 mt-0.5 flex-shrink-0 text-primary" />
-                  <span>{objective}</span>
-                </li>
-              ))}
-            </ul>
-            <Collapsible className="mt-2">
-              <CollapsibleTrigger className="flex w-full items-center justify-between text-xs text-primary hover:bg-secondary p-1 rounded">
-                <span>View Workflow Details</span>
-                <ChevronDown className="h-3 w-3 transition-transform [&[data-state=open]]:rotate-180" />
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-1 text-xs">
-                <div className="space-y-1">
-                  <p><strong>Description:</strong> {selectedWorkflow.description}</p>
-                  <p><strong>Chatflow ID:</strong> {selectedWorkflow.chatflowId}</p>
-                  <div>
-                    <strong>Expected Input:</strong>
-                    <ul className="list-disc pl-4">
-                      {Array.isArray(selectedWorkflow.expectedInput) && selectedWorkflow.expectedInput.map((input, index) => (
-                        <li key={index}>{input}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <p><strong>Example Input:</strong> {selectedWorkflow.exampleInput}</p>
-                  <div>
-                    <strong>Steps:</strong>
-                    <ol className="list-decimal pl-4">
-                      {Array.isArray(selectedWorkflow.steps) && selectedWorkflow.steps.map((step, index) => (
-                        <li key={index}>{step}</li>
-                      ))}
-                    </ol>
-                  </div>
-                  <div>
-                    <strong>Tags:</strong>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {Array.isArray(selectedWorkflow.tags) && selectedWorkflow.tags.map((tag, index) => (
-                        <span key={index} className="bg-secondary text-secondary-foreground text-xs font-medium mr-1 px-1.5 py-0.5 rounded">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Notepad Button */}
-      <div className="p-2 bg-card flex justify-end mt-2">
-        <Button
-          onClick={toggleNotepad}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs py-1 px-2"
-        >
-          {isNotepadOpen ? (
-            <>
-              <X className="mr-1 h-3 w-3" />
-              Close Notepad
-            </>
-          ) : (
-            <>
-              <Pencil className="mr-1 h-3 w-3" />
-              Open Notepad
-            </>
-          )}
+          </CollapsibleContent>
+        </Collapsible>
+      </CardContent>
+      <CardFooter className="flex justify-end p-4 border-t border-[hsl(12_6.5%_15.1%)]">
+        <Button variant="outline" className="flex items-center gap-2 bg-[hsl(12_6.5%_15.1%)] text-[hsl(60_9.1%_97.8%)] hover:bg-[hsl(20.5_90.2%_48.2%)] hover:text-[hsl(60_9.1%_97.8%)]">
+          <FileLineChart size={16} />
+          View Diagram
         </Button>
-      </div>
-
-      {/* Notepad Drawer */}
-      <NotepadDrawer
-        isOpen={isNotepadOpen}
-        onClose={() => setIsNotepadOpen(false)}
-      />
-    </div>
+      </CardFooter>
+    </Card>
   );
 }

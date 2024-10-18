@@ -12,12 +12,12 @@ import WebhookManager from "./components/webhookmanager"
 import LandingPage from "./components/LandingPage"
 import NotepadDrawer from "./components/notepaddrawer";
 import DocumentManager from "./components/DocumentManager";
-import { Workflow, Webhook } from '@/types';
+import { Workflow, Webhook, Assistants } from '@/types';
 import { collection, getDocs } from "firebase/firestore";
 import { db } from '@/firebase.js';
 import { ThemeToggle } from './components/theme-toggle';
-import { RightPanel } from "./components/right-panel"
 import CompanyManager from "./components/CompanyManager";
+import { AIAssistant } from './components/AIAssistant';
 
 const queryClient = new QueryClient();
 
@@ -28,6 +28,8 @@ function AppContent() {
   const [selectedFlowId, setSelectedFlowId] = useState<string>('');
   const [isNotepadOpen, setIsNotepadOpen] = useState(false);
   const [openAIKey, setOpenAIKey] = useState<string>('');
+  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
+  const [aiAssistant, setAiAssistant] = useState<AIAssistant | null>(null);
 
   useEffect(() => {
     const fetchWorkflows = async () => {
@@ -65,6 +67,28 @@ function AppContent() {
   const openNotepad = () => setIsNotepadOpen(true);
   const closeNotepad = () => setIsNotepadOpen(false);
 
+  const handleSelectWorkflow = (workflow: Workflow) => {
+    setSelectedWorkflow(workflow);
+    setSelectedFlowId(workflow.id);
+  };
+
+  const handleSelectAssistant = (assistant: Assistants) => {
+    console.log("Selected assistant:", assistant);
+    const newAiAssistant = new AIAssistant({
+      agent: assistant,
+      onMessageReceived: (message) => {
+        console.log("Received message from assistant:", message);
+        // Handle the received message as needed
+      }
+    });
+    setAiAssistant(newAiAssistant);
+  };
+
+  const handleSelectWebhook = (webhook: Webhook) => {
+    // Implement this function as needed
+    console.log("Selected webhook:", webhook);
+  };
+
   return (
     <div className="flex h-screen bg-background">
       <SideMenu navigate={navigate} openNotepad={openNotepad} />
@@ -79,14 +103,16 @@ function AppContent() {
                 webhooks={webhooks} 
                 openAIKey={openAIKey}
                 className="flex-grow"
+                workflows={workflows}
+                onSelectWorkflow={handleSelectWorkflow}
+                onSelectAssistant={handleSelectAssistant}
+                onSelectWebhook={handleSelectWebhook}
+                selectedWorkflow={selectedWorkflow}
+                assistants={Assistants}
               />
-              <RightPanel 
-                title="Workflow Description"
-                items={[
-                  "Identify target customers",
-                  "Understand market trends",
-                  "Gather competitor insights"
-                ]}
+              <WorkflowDescription 
+                selectedWorkflow={selectedWorkflow}
+                className="w-[400px] border-l border-border"
               />
             </div>
           } />
